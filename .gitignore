@@ -5,6 +5,7 @@
 !/.gitignore
 !/CONTRIBUTING.md
 !/GETTING_STARTED.md
+!/LCD_PROVENANCE.md
 !/LICENSE
 !/PROVENANCE.md
 !/PUBLICATION.md
@@ -113,9 +114,11 @@
 !/firmware/usb-diag/vendor_overlay.py
 !/licenses/Apache-2.0.txt
 !/public-files.txt
+!/scripts/audit_lcd_references.py
 !/scripts/build.py
 !/scripts/dependencies.py
 !/scripts/release.py
+!/tests/test_lcd_references.py
 !/tests/test_overlay_notices.py
 !/tests/test_release.py
 /.deps/

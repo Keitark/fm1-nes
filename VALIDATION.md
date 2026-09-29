@@ -77,3 +77,23 @@ and the installed toolchain were reused; no device operations were performed.
 No SDK/toolchain installation, firmware flashing, device access, visibility
 change or legal sign-off was performed. The standalone peripheral-profile audit
 failure above remains unresolved; the passing example is a different profile.
+
+## LCD reference review - 2026-09-30
+
+- Compared all 21 local LCD records with the three pinned SDK S/V/T3
+  initializers: **10 exact candidate matches**. Both local arrays retain SHA-256
+  `280cb746088bea4a2fce2819c1415da0597a286120e3a8229449fbafdc1280c7`.
+  See LCD_PROVENANCE.md for the full map and manual datasheet review.
+- `python -m unittest discover -s tests -v`: **22/22 passed**. Six new checks
+  cover the literal parser, delayed row, unused B2 byte, table identity/hash and
+  complete report row coverage. These tests do not verify datasheet interpretation.
+- `python scripts/build.py host`: **25/25 NES and 27/27 USB tests passed** after
+  setting the documented dependency environment variables to existing pinned
+  checkouts. An initial invocation without those variables stopped at the
+  missing default `.deps/peak-nes` path; nothing was downloaded or installed.
+- Source allowlist expanded to **120 files**. Reference PDFs and rendered pages
+  remain ignored local research inputs, not release contents.
+- No changes under `firmware/` relative to publication-preparation commit
+  `0907a48`. No new firmware build, flash, device test or visibility change was
+  performed for this documentation/offline-audit update. Earlier firmware build
+  evidence above remains separate from this review.

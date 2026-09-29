@@ -34,6 +34,11 @@ automatic permission or infringement determinations.
 | `firmware/nes/tests/make_diagnostic_rom.py` | Project diagnostic generator for original checkerboard/controller/pulse tests; no commercial ROM input. | A user-supplied ROM remains outside this source release and requires its own rights assessment. |
 | Other project adapters, effects, tests, headers, build/release scripts and documentation | Maintained as project contributions; dependencies are separately identified above. | This focused review does not certify exhaustive independent authorship of every remaining line. New borrowed material needs explicit origin/license review. |
 
+The complete 21-record comparison is in [LCD_PROVENANCE.md](LCD_PROVENANCE.md).
+Ten records match candidates in the pinned SDK S/V/T3 initializers, while three
+protocol/reference discrepancies need further technical review. The report
+preserves the table's known origin; it does not approve or change runtime code.
+
 ## Official documentation
 
 The pinned SDK README links to the release-v1.2.0 documentation. These references

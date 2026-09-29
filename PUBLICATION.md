@@ -12,9 +12,13 @@ until the maintainer resolves the source-publication decisions below.
   obtain permission, seek applicable legal advice, or exclude/reimplement it
   from an appropriately reviewed specification. Relabeling or changing names
   does not establish independent implementation.
-- [ ] Confirm any relevant firmware/tool acquisition terms, confidentiality
-  commitments and access-method questions. Repository scans cannot establish
-  those facts. Obtain jurisdiction-specific advice for unresolved legal issues.
+- [x] Ask the maintainer about acquisition/confidentiality agreements. On
+  2026-09-30 the maintainer reported: "No NDA or private agreement that I know of".
+  This is a qualified personal report, not independent verification or a claim
+  that every public download was free of terms.
+- [ ] Review any applicable public download/license terms and unresolved
+  access-method questions. Repository scans cannot establish separate agreements
+  or permissions. Obtain jurisdiction-specific advice for unresolved legal issues.
 - [ ] Verify upstream attribution, licenses and modification notices for the
   exact source being released. Do not assume a link to public research grants
   rights to third-party content hosted there.
@@ -30,6 +34,10 @@ until the maintainer resolves the source-publication decisions below.
 No legal sign-off is recorded by this checklist. Detailed review evidence can
 remain private; retain truthful public attribution and required notices.
 Do not erase development evidence or claim clean-room development retroactively.
+
+The bounded LCD comparison is complete in [LCD_PROVENANCE.md](LCD_PROVENANCE.md):
+all 21 records are mapped, but the publication decision is still open. Ten SDK
+matches corroborate individual values; they do not change the existing origin.
 
 ## Repeatable technical checks
 
