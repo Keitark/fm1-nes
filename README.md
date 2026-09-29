@@ -1,5 +1,9 @@
 # Custom firmware development for the M-VAVE FM-1
 
+[![Status: experimental](https://img.shields.io/badge/status-experimental-orange)](#verification-status)
+[![MIDI: hardware unverified](https://img.shields.io/badge/MIDI-hardware%20unverified-orange)](#verification-status)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+
 This repository shares resources, board-support code and a worked example of
 **how to develop custom firmware for the FM-1**, based on the Jieli WL82. The
 goal is to make the hardware accessible for experiments with synthesizers,
@@ -9,6 +13,18 @@ The NES player is an example that exercises the display, audio, keys, knobs and
 real-time scheduling together. Use it as a reference, or replace it with your own
 application. This is an independent, experimental project, not an official
 M-VAVE or Jieli release. No game ROM or stock firmware is included.
+
+## Verification status
+
+**The MIDI path has not yet been confirmed by the maintainer on hardware.**
+Treat MIDI input/output, patch/parameter SysEx and MIDI/SysEx firmware upload as
+unverified for this project. Stock documentation and source-code analysis are
+references, not evidence of successful end-to-end hardware tests here.
+
+USB CDC serial and Jieli UBOOT are separate from MIDI. Their implementation does
+not establish MIDI support. The SysEx section below describes a possible future
+transport, not a confirmed upload path. Local build and host-test evidence is
+recorded in [VALIDATION.md](VALIDATION.md); it is not hardware certification.
 
 ## Start with USB serial and a way back to UBOOT
 
@@ -75,6 +91,9 @@ device. The source export's diagnostic artifact remains unflashed/unqualified;
 see [VALIDATION.md](VALIDATION.md).
 
 ### What about SysEx uploads?
+
+**Status: unverified on hardware by the maintainer. No working MIDI/SysEx
+firmware-upload path is claimed by this repository.**
 
 **MIDI SysEx can be another update transport**, if the running firmware or
 bootloader implements a matching update protocol. That requires both receiver
@@ -195,5 +214,17 @@ compiled firmware, flash backups, stock disassembly, session logs, device
 identifiers, and elevated-session configuration. Packaging includes a limited
 secret-pattern/binary check, not a guarantee against every possible disclosure.
 
-See [THIRD_PARTY.md](THIRD_PARTY.md) for provenance and licensing boundaries and
-[VALIDATION.md](VALIDATION.md) for the actual verification results.
+See [VALIDATION.md](VALIDATION.md) for the actual verification results.
+
+## License
+
+Project-authored material is currently licensed under
+[Apache-2.0](LICENSE). The license badge describes that current choice; this
+repository has not been switched to MIT.
+
+External dependencies and any upstream-derived portions retain their applicable
+licenses and notices. The project's license does not grant rights to stock
+firmware, game ROMs or third-party tools. A different license for project-owned
+contributions would not remove those obligations or resolve the provenance of
+stock-derived material. See [THIRD_PARTY.md](THIRD_PARTY.md) and the retained
+[Apache-2.0 dependency license](licenses/Apache-2.0.txt).
