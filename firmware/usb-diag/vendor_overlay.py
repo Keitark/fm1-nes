@@ -1,8 +1,24 @@
-"""Isolated, exact-pin SDK CDC corrections. Never modifies the vendor checkout."""
+"""Isolated, exact-pin SDK/NES adaptations; see THIRD_PARTY.md and PROVENANCE.md.
+
+Upstream match fragments come from Jieli-Tech AC79 SDK and PeakRacing NES
+(Apache-2.0 at the pinned revisions). Existing upstream notices are retained.
+"""
 import re
+
+def modified_notice(text, origin):
+    """Mark generated adaptations, retaining the complete upstream header."""
+    marker = '/* Modified by the FM-1 custom firmware project.'
+    if marker in text:
+        return text
+    return (marker + '\n'
+            ' * Based on ' + origin + '; see THIRD_PARTY.md for pinned revisions.\n'
+            ' * Local USB/boot or NES rendering/audio adaptations are not upstream releases.\n'
+            ' * Upstream license and copyright notices below remain applicable.\n'
+            ' */\n' + text)
 
 def nes_render_skip(text):
     """NROM/CNROM hidden-frame pixels only; retain all emulation side effects."""
+    text=modified_notice(text,'PeakRacing NES (Apache-2.0)')
     text=once(text,'#include "nes.h"', '''#include "nes.h"
 #include "fm1_nes.h"
 static int fm1_render_pixels=1;
@@ -55,6 +71,7 @@ static void fm1_hidden_background(nes_t *nes,unsigned scanline) {
 
 def nes_tiles(text):
     """Bit-identical bitplane decoding; preserve all fetch/mapper/timing code."""
+    text=modified_notice(text,'PeakRacing NES (Apache-2.0)')
     names=('nes_render_background_line','nes_render_sprite_line')
     originals=[]
     for name in names:
@@ -133,6 +150,7 @@ static void fm1_reference_sprite(nes_t*,const sprite_line_t*,nes_color_t*);
 
 def nes_apu(text):
     """Capture four pre-mix voices without changing the pinned APU algorithms."""
+    text=modified_notice(text,'PeakRacing NES (Apache-2.0)')
     text=once(text,'#include "nes.h"', '''#include "nes.h"
 #include "fm1_nes.h"
 static uint8_t fm1_voice_samples[4][NES_APU_SAMPLE_PER_SYNC];''')
@@ -148,6 +166,7 @@ static uint8_t fm1_voice_samples[4][NES_APU_SAMPLE_PER_SYNC];''')
 
 def nes_profile(text):
     """Wrap call boundaries only; no instruction/scanline/audio changes."""
+    text=modified_notice(text,'PeakRacing NES (Apache-2.0)')
     text=once(text,'#include "nes.h"', '''#include "nes.h"
 #include "fm1_profile.h"
 static void fm1_profile_opcode(nes_t *n,uint16_t ticks) {
@@ -175,10 +194,12 @@ def function(text, name, replacement):
     return text[:m.start()]+replacement+text[m.end():]
 
 def boot_entry(text):
+    text=modified_notice(text,'Jieli-Tech AC79 SDK (repository license Apache-2.0)')
     return once(text,'void __attribute__((weak)) nvram_set_boot_state(u32 state) {}',
                 'extern void nvram_set_boot_state(u32 state);')
 
 def cdc(text):
+    text=modified_notice(text,'Jieli-Tech AC79 SDK (repository license Apache-2.0)')
     text='#include "usb_control.h"\n#include "boot_entry.h"\n'+text
     text=once(text,'    u8 bmTransceiver;','    volatile u8 bmTransceiver;')
     text=once(text,'static struct usb_cdc_gadget *cdc_hdl[USB_MAX_HW_NUM];',
@@ -254,6 +275,7 @@ int fm1_cdc_ready(usb_dev id) {
     return text
 
 def device(text):
+    text=modified_notice(text,'Jieli-Tech AC79 SDK (repository license Apache-2.0)')
     # CDC-only: do not pull video/audio/host header trees into this build.
     for name in ('usb/device/msd.h','usb/scsi.h','usb/device/hid.h','usb/device/uac_audio.h',
                  'usb/device/slave_uvc.h','usb/device/printer.h'):

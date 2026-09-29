@@ -51,3 +51,29 @@ and the installed toolchain were reused; no device operations were performed.
   does not imply that every combination of build flags is audited successfully.
 - Source inventory/packaging tests: **5/5 passed** after adding the guide.
 - README/guide local document links and heading anchors were checked.
+
+## Publication preparation checks - 2026-09-30
+
+- Source-release/attribution tests: **16/16 passed**, including historical
+  credential detection after removal, annotated-tag messages, historical
+  alternate filenames, tracked-inventory drift, shallow-checkout refusal and
+  repeatable archives without overwriting prior candidates.
+- Rebuilt host targets: **25/25 NES and 27/27 USB/peripheral tests passed**.
+- Rebuilt the complete diagnostic example using the same external pinned SDK,
+  NES core and existing compiler: **build/static audit passed**. Output in
+  `build/publication-check` is **198,480 bytes**, SHA-256
+  `a8bbb8f3cd4e44bf784cbff8a174da9d0de121d0e79a00bc2ef76c4f7ec1b663`,
+  identical to the prior diagnostic application. Generated upstream sources
+  now carry project modification notices; runtime logic was not changed.
+- Allowlist: **117 source/document/workflow files**. The new Git check also
+  scans local reachable historical blobs and commit/tag messages with limited
+  patterns. These checks do not establish code ownership or inspect all hosted
+  GitHub surfaces. CI uses the same source-only checks and uploads no artifacts.
+- PROVENANCE.md maps the reviewed SDK interfaces and retained board findings.
+  The LCD table's stock origin is explicitly preserved, not reassigned to the
+  SDK. PUBLICATION.md records unresolved source-publication decisions separately
+  from binary-distribution and hardware qualification gates.
+
+No SDK/toolchain installation, firmware flashing, device access, visibility
+change or legal sign-off was performed. The standalone peripheral-profile audit
+failure above remains unresolved; the passing example is a different profile.

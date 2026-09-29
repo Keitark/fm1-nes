@@ -175,7 +175,7 @@ Reuse the existing board-support work in small increments:
 | --- | --- | --- |
 | USB and boot entry | `firmware/usb-diag/app_main.c`, `protocol.c`, `rx_channel.c`, `boot_entry.c` | Responsive commands and repeatable download-mode entry |
 | Startup and power | `firmware/nes/boot/board.c`, `board_power.c`, `boot_compat.c` | Reliable normal boot and preserved USB diagnostics |
-| LCD/backlight | `firmware/nes/boot/display_test.c`, `firmware/nes/src/fm1_lcd_pack.c` | Backlight, full window, orientation and known color patterns |
+| LCD / board enable sequence | `firmware/nes/boot/display_test.c`, `firmware/nes/src/fm1_lcd_pack.c` | Illumination, full window, orientation and known color patterns; PA2's electrical role is not independently established |
 | Audio | `firmware/usb-diag/peripherals.c`, `firmware/nes/src/fm1_audio_queue.c` | Known test tone at low listening level, then continuous playback |
 | Keys/knobs/volume | `firmware/nes/src/fm1_wl82_keyscan.c`, `fm1_stock_keys.c`, `fm1_volume.c`, `firmware/usb-diag/peripherals.c` | Each control individually, held-key behavior and continued serial response |
 
@@ -206,6 +206,13 @@ When replacing NES with your application, preserve CDC and boot entry. Use
 bounded peripheral waits, deliberate buffer ownership and small ISR workloads;
 test inputs, display and audio under concurrent load. Make one change per
 build/test cycle and record what was observed versus inferred.
+
+For the chip-facing implementation, use the official SDK documentation and
+the distinctions in [PROVENANCE.md](PROVENANCE.md). The existing stock-style
+LCD sequence drives PA2 low; this is not proof that PA2 is a dedicated backlight
+pin. The retained LCD table is stock-derived, not newly attributed to the SDK.
+Publication and binary-distribution decisions are tracked in
+[PUBLICATION.md](PUBLICATION.md).
 
 ## MIDI and SysEx: an unverified development path
 

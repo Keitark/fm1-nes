@@ -1,6 +1,7 @@
 # Provenance and redistribution boundaries
 
-Project-authored source in this export is offered under Apache-2.0; see LICENSE.
+Project-authored material is offered under Apache-2.0 to the extent we hold the
+necessary rights; see LICENSE and the source-reference map in PROVENANCE.md.
 This does not relicense other parties' code, firmware, trademarks or game assets.
 Review ownership of any future additions before publishing them.
 
@@ -21,20 +22,31 @@ Review ownership of any future additions before publishing them.
 `licenses/Apache-2.0.txt` contains the dependency license text. Build-time overlays
 in `firmware/usb-diag/vendor_overlay.py` adapt the pinned SDK USB implementation
 and NES rendering/APU implementation without modifying upstream checkouts.
-Generated copies retain upstream headers. Overlay substitutions are local
-modifications, not upstream releases; generated copies are excluded from this
+Generated copies retain upstream headers and carry a prominent FM-1 project
+modification notice. The overlay script itself contains upstream match fragments
+under their applicable terms. Overlay substitutions are local modifications,
+not upstream releases; generated copies are excluded from this
 archive. If distributing linked binaries later, separately review and satisfy
 all dependency/library notices and ROM redistribution rights.
 
-## FM-1 reverse-engineering boundary
+## Hardware research and scope
 
 Board-specific register values, LCD initialization data, key decoding and power
 parameters were recovered through investigation of the FM-1's behavior/firmware.
+In particular, the two `panel_init` arrays retain a 21-record table recovered
+from FM-1_010. Excluding full stock images does not mean that no stock-derived
+data remains. Its publication review is recorded separately in PUBLICATION.md.
 This is **not a claimed clean-room implementation**. The public source retains
 that provenance and does not include stock ROMs, raw disassembly, firmware
 patch payloads, chip keys, downloaded vendor archives or private evidence logs.
 Power verification here checks the pinned SDK's generated instructions and
 reviewed parameters, not a redistributed stock image.
+
+Official SDK documentation and community research, including
+[AL-255/FM-1-RE](https://github.com/AL-255/FM-1-RE), are technical references.
+A link is not a claim that this project's existing implementation originated
+there, nor permission to redistribute third-party firmware hosted elsewhere.
+PROVENANCE.md distinguishes documented chip APIs from FM-1-specific findings.
 
 The diagnostic ROM generator is original project source: checkerboard graphics,
 pulse sound and controller checks, with no Nintendo/game assets. No commercial

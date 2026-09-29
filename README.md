@@ -14,6 +14,21 @@ real-time scheduling together. Use it as a reference, or replace it with your ow
 application. This is an independent, experimental project, not an official
 M-VAVE or Jieli release. No game ROM or stock firmware is included.
 
+## Research and attribution
+
+Development has used the Jieli AC79 SDK, publicly available research, device
+testing, and analysis of stock firmware behavior. This source release excludes
+stock firmware images, raw disassembly, chip keys and commercial game ROMs;
+it does contain stock-derived board parameters and an LCD initialization table.
+It is not presented as a clean-room implementation.
+
+Third-party components and adaptations retain their applicable licenses and
+attribution. The project license applies only to material we have the right to
+license. See [THIRD_PARTY.md](THIRD_PARTY.md), the focused
+[source-reference map](PROVENANCE.md), and the
+[publication checklist](PUBLICATION.md). Technical checks do not establish
+redistribution rights, and this preparation does not authorize a public release.
+
 **New to FM-1 development? Start with the [custom-firmware starting guide](GETTING_STARTED.md).**
 It includes a minimal USB-only build, bring-up checkpoints and a copyable prompt
 for an AI coding agent. “Custom ROM” here means device firmware, not a game ROM.
@@ -220,15 +235,27 @@ source; running a build does not contact the device.
 
 ```powershell
 python -m unittest discover -s tests -v
-python scripts/release.py
+python scripts/release.py --check --git
+python scripts/release.py --git --output dist/fm1-source-candidate.zip
 ```
 
-This creates `dist/fm1-public-source.zip` using only exact paths in
+This creates `dist/fm1-source-candidate.zip` using only exact paths in
 `public-files.txt`, with a SHA-256 inventory. The restrictive `.gitignore` allows
 only these reviewed source files. New files require an explicit update to both
-lists. Neither mechanism removes a sensitive file already tracked in Git; this
+lists. Choose a fresh `--output` name for another candidate; existing archives
+are never overwritten. Archive entry timestamps and permissions are fixed.
+Neither mechanism removes a sensitive file already tracked in Git; this
 repository was initialized from the reviewed source export, without private
 development history.
+
+The `--git` check requires a non-shallow checkout, matches the tracked-file list
+to the manifest, and checks paths/modes and limited secret patterns across local
+reachable history (including commit/tag messages and deleted files). It does not
+scan remote-only refs, issues, PR discussions, releases, caches or Git LFS payloads.
+The [source-only CI workflow](.github/workflows/source-release.yml) runs the same
+checks with read-only repository permissions and does not upload any artifacts.
+Stage reviewed new files before running the tracked-inventory check. For an
+extracted source ZIP without `.git`, use `--check` without `--git` instead.
 
 **Publish the source archive, not a ZIP of the whole working directory.** Local
 build results can embed your chosen ROM and contain machine-specific paths.
@@ -238,6 +265,10 @@ identifiers, and elevated-session configuration. Packaging includes a limited
 secret-pattern/binary check, not a guarantee against every possible disclosure.
 
 See [VALIDATION.md](VALIDATION.md) for the actual verification results.
+
+The USB descriptor currently retains an SDK VID/PID (`3654:5155`) for local bench
+compatibility, not a project-owned allocation. Resolve identity authorization
+before distributing a USB product; no USB-IF certification is claimed.
 
 ## License
 
