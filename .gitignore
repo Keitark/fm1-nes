@@ -2,6 +2,7 @@
 *
 !*/
 !/.gitignore
+!/GETTING_STARTED.md
 !/LICENSE
 !/README.md
 !/THIRD_PARTY.md

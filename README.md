@@ -14,6 +14,29 @@ real-time scheduling together. Use it as a reference, or replace it with your ow
 application. This is an independent, experimental project, not an official
 M-VAVE or Jieli release. No game ROM or stock firmware is included.
 
+**New to FM-1 development? Start with the [custom-firmware starting guide](GETTING_STARTED.md).**
+It includes a minimal USB-only build, bring-up checkpoints and a copyable prompt
+for an AI coding agent. “Custom ROM” here means device firmware, not a game ROM.
+
+## Starting resources for developers and AI agents
+
+Give your agent these links before asking it to write firmware. Read the linked
+documentation and source first; do not automatically execute their setup,
+update or flash scripts. Pin the revisions used for an experiment.
+
+| Resource | What to use it for |
+| --- | --- |
+| [FM-1-RE](https://github.com/AL-255/FM-1-RE) | FM-1-specific architecture, disassembly, function maps and update-protocol research. Check firmware versions, address conventions and its unresolved recovery gates. |
+| [jielie](https://github.com/kagaimiq/jielie) | Jieli chip/CPU, firmware-format and programming-protocol notes; start with the [USB_KEY notes](https://kagaimiq.github.io/jielie/isp/usb/usb-key.html) when studying forced entry. |
+| [jl-misctools](https://github.com/kagaimiq/jl-misctools) | Existing offline firmware-container and resource utilities. Inspect format support before using a parser on your backup. |
+| [jl-uboot-tool](https://github.com/kagaimiq/jl-uboot-tool) | UBOOT protocol and read/write tooling reference. Upstream lists WL82 support as unknown; review the exact loader and transport, not just the product name. |
+| [Official AC79 SDK](https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK) | WL82 startup, linker, RTOS, USB and peripheral APIs. Use this project's pinned revision for builds. |
+| [ghidra-jieli](https://github.com/kagaimiq/ghidra-jieli) | Jieli processor-module research for disassembly. Verify coverage of the exact pi32v2 instructions before trusting a decompilation. |
+
+These are references, not bundled dependencies or guarantees that their images
+and commands work on your board. Community findings must be checked against the
+actual firmware and hardware. See the guide's [AI-agent starting prompt](GETTING_STARTED.md#ai-agent-starting-prompt).
+
 ## Verification status
 
 **The MIDI path has not yet been confirmed by the maintainer on hardware.**

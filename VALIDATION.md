@@ -34,3 +34,20 @@ application has not been flashed; boot/display/audio on hardware remain untested
 for the clean diagnostic artifact. Existing private backups and flashing tools
 are intentionally outside this release. See THIRD_PARTY.md for provenance;
 source sanitization is not a clean-room or comprehensive legal clearance claim.
+
+## Starting-guide command checks — 2026-09-30
+
+No runtime source was changed for these checks. Existing pinned dependencies
+and the installed toolchain were reused; no device operations were performed.
+
+- USB-only: `python firmware/usb-diag/build.py --controller 0 --out build/usb-first`
+  **passed** its build/static audit. Application: **129,392 bytes**, SHA-256
+  `aa8e5a484465785f7f29a0cc3efd28a5618316af9193f197a15531df43da5ebd`.
+  No NES ROM or peripheral tests included. Hardware acceptance remains pending.
+- Standalone peripherals: the command shown in GETTING_STARTED.md **failed**
+  the static audit with `USB trace merged-global offset changed: 240` after
+  linking. This profile is not qualified; checks were not disabled or relaxed.
+- The earlier complete NES-example result is a different build profile; it
+  does not imply that every combination of build flags is audited successfully.
+- Source inventory/packaging tests: **5/5 passed** after adding the guide.
+- README/guide local document links and heading anchors were checked.
