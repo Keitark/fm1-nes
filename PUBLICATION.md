@@ -6,28 +6,33 @@ until the maintainer resolves the source-publication decisions below.
 
 ## Before making the repository public
 
-- [ ] Review the focused map in PROVENANCE.md, especially the retained FM-1_010
-  LCD initialization table and stock-specific boot/board adaptation. Record the
-  basis for publishing each questioned portion; where rights remain unclear,
-  obtain permission, seek applicable legal advice, or exclude/reimplement it
-  from an appropriately reviewed specification. Relabeling or changing names
-  does not establish independent implementation.
+- [x] Complete the bounded source-reference and publication-surface review.
+  See PROVENANCE.md, LCD_PROVENANCE.md and PUBLICATION_AUDIT.md. The review
+  distinguishes documented interfaces from retained board-specific findings.
+- [ ] Record the maintainer's publication decision for retained LCD/boot/board
+  material and the SDK-derived instruction templates in host audit scripts.
+  Where rights remain unclear, obtain permission, seek applicable legal advice,
+  or exclude/reimplement the affected portion from an appropriately reviewed
+  specification. Relabeling or squashing does not establish independent origin.
 - [x] Ask the maintainer about acquisition/confidentiality agreements. On
   2026-09-30 the maintainer reported: "No NDA or private agreement that I know of".
   This is a qualified personal report, not independent verification or a claim
   that every public download was free of terms.
-- [ ] Review any applicable public download/license terms and unresolved
-  access-method questions. Repository scans cannot establish separate agreements
-  or permissions. Obtain jurisdiction-specific advice for unresolved legal issues.
-- [ ] Verify upstream attribution, licenses and modification notices for the
-  exact source being released. Do not assume a link to public research grants
-  rights to third-party content hosted there.
-- [ ] On the final commit, run the source checks and host tests below, inspect
-  the ZIP inventory, and record its hash. Review any changed CI workflow itself.
-- [ ] Review all branches/tags that will be visible, plus GitHub issues, PR
-  discussions, Actions logs/artifacts, releases, attachments and any wiki/pages.
-  The local Git scanner does not inspect those hosted surfaces or unfetched refs.
-  Keep private review notes outside tracked paths and public discussions.
+- [x] Inspect the available pinned source licenses/notices and official download
+  landing pages. PUBLICATION_AUDIT.md records scope and limits. Historical
+  installer terms and access-method legality were not independently established;
+  these limitations belong in the publication decision above, not a false pass.
+- [x] Verify attribution, license copies and generated modification notices for
+  the reviewed SDK/PeakRacing source adaptations. No source-license conflict was
+  identified in that scoped review. A reference link is not a redistribution grant.
+- [x] Run source checks and host tests for this candidate and review the CI
+  workflow. The commit/archive verification receipt is recorded on issue #5.
+  Repeat checks and inspect a fresh ZIP for any later release commit.
+- [x] Review advertised branches/tags and PR refs, plus available GitHub issue/PR
+  bodies, comments, Actions logs/artifacts, releases, attachment links and
+  wiki/Pages/Discussions settings. The dated snapshot and limits are recorded in
+  PUBLICATION_AUDIT.md. Refresh changed surfaces before publication; the local
+  Git scanner alone does not cover them. Private evidence stays untracked.
 - [ ] Confirm the exact visibility change separately. Do not automate publication
   merely because tests pass or an archive exists.
 

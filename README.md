@@ -265,6 +265,9 @@ identifiers, and elevated-session configuration. Packaging includes a limited
 secret-pattern/binary check, not a guarantee against every possible disclosure.
 
 See [VALIDATION.md](VALIDATION.md) for the actual verification results.
+The [publication audit](PUBLICATION_AUDIT.md) records the reviewed source terms,
+boot/power evidence, included SDK-derived audit constants and GitHub surface
+checks. It also separates completed checks from the maintainer's release decision.
 
 The USB descriptor currently retains an SDK VID/PID (`3654:5155`) for local bench
 compatibility, not a project-owned allocation. Resolve identity authorization

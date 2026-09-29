@@ -29,6 +29,12 @@ not upstream releases; generated copies are excluded from this
 archive. If distributing linked binaries later, separately review and satisfy
 all dependency/library notices and ROM redistribution rights.
 
+The host build-audit scripts also contain instruction-byte reference templates,
+not only hashes: some check SDK startup code and others check project-compiled
+wrappers. No complete SDK library or executable patch is included, but these
+SDK-derived reference sequences are part of the source review. See
+PUBLICATION_AUDIT.md for their origin and the separate linked-library boundary.
+
 ## Hardware research and scope
 
 Board-specific register values, LCD initialization data, key decoding and power

@@ -65,6 +65,12 @@ the applicable terms and notices for each input and for any embedded assets.
 
 ## Review outcome
 
+The remaining bounded review is recorded in
+[PUBLICATION_AUDIT.md](PUBLICATION_AUDIT.md), including source licenses, the
+boot/power comparison, SDK-derived instruction templates in host audit scripts,
+and a point-in-time GitHub surface inventory. Source-only does not mean that
+every included byte sequence originated independently of the SDK.
+
 The SDK supports understanding and implementing much of the chip-facing code.
 It does not, on its own, clear the retained LCD table, establish the stock ABI,
 or verify the FM-1 wiring. No ownership determination is inferred from matching

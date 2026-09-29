@@ -97,3 +97,24 @@ failure above remains unresolved; the passing example is a different profile.
   `0907a48`. No new firmware build, flash, device test or visibility change was
   performed for this documentation/offline-audit update. Earlier firmware build
   evidence above remains separate from this review.
+
+## Remaining publication audit - 2026-09-30
+
+- Pinned dependency licenses and selected adaptation notices reviewed; five
+  generated adaptations retain modification notices and the two NES adaptations
+  retain upstream copyright headers. No toolchain redistribution grant claimed.
+- Boot/power comparison and the SDK-derived instruction-template boundary are
+  recorded in PUBLICATION_AUDIT.md. No firmware or static-audit logic changed.
+- Fetched advertised PR head refs and the available PR merge ref for the local
+  history check. Baseline scan: **9 commits / 149 objects**, including that merge.
+- GitHub snapshot: four branches, no tags, three issues, three PRs, four comments,
+  four CI run logs. No configured secret-pattern hit or attachment link. No
+  releases, uploaded artifacts, deployments or forks; wiki/Pages/Discussions off.
+  This is a dated bounded review, not a guarantee about inaccessible/deleted data.
+- **22/22 source tests and 25/25 NES plus 27/27 USB host tests passed** again.
+  Existing pinned dependencies/toolchain reused; MSVC's known code-page warning
+  remained non-fatal. No new target firmware build or hardware acceptance claimed.
+- Source manifest now contains **121 files**. Audit evidence remains ignored
+  under `local/`; the public report includes findings, not private logs.
+- No history rewrite, file deletion, firmware change, device operation or
+  visibility change. No concrete history-removal target identified by this audit.
