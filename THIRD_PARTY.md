@@ -61,7 +61,7 @@ and tests are reused/adapted from `Keitark/fm1-mdx` at
 `41410578152eec195b534b3acfe2fa1b10e7476e`. Its root LICENSE is GPLv3; imported
 files are conservatively marked **GPL-3.0-only**, not Apache or MIT. The complete
 license is `licenses/fm1-mdx-GPL-3.0.txt`. MDX-derived CDC overlay, task/session
-and composite descriptor portions have those terms too; original notices remain.
+and composite descriptor/setup-policy portions have those terms too; original notices remain.
 No MDX/YM2151/sequencer code, songs, recordings or proprietary firmware are
 included by this port.
 

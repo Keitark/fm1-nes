@@ -29,7 +29,8 @@ line-capture category inherited from MDX does not imply physical line-in.
 
 Configure the existing pinned SDK/core/compiler as in GETTING_STARTED.md.
 Reuse your Python installation: no interpreter or environment is installed.
-With no ROM option these commands use the original diagnostic cartridge:
+With no ROM option or private local default these commands use the original
+diagnostic cartridge:
 
 ```powershell
 python scripts/build.py host
@@ -47,6 +48,13 @@ calls the existing packager only after the matching static audit passes.
 The `.fm1app` contains exactly `app.bin` and a minimal manifest, without the
 installed bootloader or unit configuration. No full-ROM candidate is generated.
 All generated binaries/packages are excluded from the source release.
+
+For a persistent private bench default, put only `rom` (a local file path) and
+`sha256` (its expected hash) in ignored `local/rom.json`. Relative paths are
+resolved from that file's directory. Explicit `--rom`/`--rom-sha256` override
+it; `--diagnostic` explicitly selects the original test cartridge. An invalid
+or missing configured ROM fails instead of silently substituting the test ROM.
+Neither the local configuration nor game bytes are included in Git/releases.
 
 ## Program using the existing method
 
@@ -98,10 +106,18 @@ isolation, reset/epoch cancellation, DMA ownership, idle volume sampling and
 models are not Windows, physical bus or timing certification.
 
 Target audits pin descriptors, packet instructions, CPU0 tasks, capture/mix/gain
-call order, UBOOT teardown, boot/power and internal RAM placement. Corruption
+call order, actual setup-filter policy, UBOOT teardown, boot/power and internal RAM placement. Corruption
 tests check rejection. Bench acceptance must cover physical enumeration,
 playback/capture, volume while stopped, concurrent CDC, sustained duplex,
 disconnect/reconnect and serial UBOOT.
+
+The first bench build missed the MDX composite setup policy: its stale CDC-only
+hook rejected interfaces2..4 and EP1, producing Windows `CM_PROB_FAILED_START`.
+The corrected policy was rewritten and Windows enumerated CDC plus both audio
+endpoints. CDC telemetry showed advancing NES frames with zero faults/underruns.
+That confirms startup/liveness, not sustained duplex audio or physical volume
+acceptance. Windows may retain the old MDX endpoint display name for this shared
+bench VID/PID; the bus-reported product is `FM1 NES USB Audio`.
 
 ## License boundary
 

@@ -18,8 +18,11 @@ class LinkTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.folder = Path(os.environ.get('FM1_LINK_TEST_DIR', ROOT / 'build/firmware-audio'))
-        rom=ROOT / "build/diagnostic.nes"
-        select_rom(rom,hashlib.sha256(rom.read_bytes()).hexdigest())
+        rom=Path(os.environ.get('FM1_LINK_TEST_ROM',ROOT / "build/diagnostic.nes"))
+        digest=os.environ.get('FM1_LINK_TEST_ROM_SHA256')
+        if 'FM1_LINK_TEST_ROM' in os.environ and not digest:
+            raise ValueError('Explicit linked-test ROM requires its expected SHA256')
+        select_rom(rom,digest or hashlib.sha256(rom.read_bytes()).hexdigest())
         cls.elf = (cls.folder / 'fm1-usb-diag.elf').read_bytes()
         offset = struct.unpack_from('<I', cls.elf, 32)[0]
         count, strings = struct.unpack_from('<HH', cls.elf, 48)
@@ -66,6 +69,10 @@ class LinkTests(unittest.TestCase):
     def test_descriptor_corruption_is_rejected(self):
         with self.assertRaisesRegex(ValueError, 'UAC1 interface/terminal'):
             self.check_elf(self.corrupt('fm1_uac_descriptor', 90))
+    def test_composite_setup_policy_corruption_is_rejected(self):
+        # Corrupt the interface upper-bound immediate in the actual EP0 hook.
+        with self.assertRaisesRegex(ValueError, 'Composite USB setup policy'):
+            self.check_elf(self.corrupt('filter', 0x29))
     def test_sample_scale_corruption_is_rejected(self):
         # ROM-backed symbol size and call-order checks are separate from host
         # PCM tests; changing this call must not remove the raw capture tap.

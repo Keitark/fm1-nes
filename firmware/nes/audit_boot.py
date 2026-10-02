@@ -332,6 +332,13 @@ def audit(elf,app,require_peripherals=False,rom='rom50',display_only=False,requi
         audit_usb_packet(symbols,code_at,composite=usb_audio)
         if usb_audio:
             descriptor=bytes((18,1,0,2,0xef,2,1,64,0x54,0x36,0x55,0x51,3,2,1,2,0,1))
+            # Reviewed actual EP0 policy: allow interfaces0..4 and EP0/1/2 IN/OUT,
+            # plus CDC IN3; stall vendor/other and all unadvertised addresses.
+            # A valid descriptor alone cannot detect a stale CDC-only hook.
+            require('filter' in symbols and symbols['filter'][1]==74 and
+                    hashlib.sha256(code_at(value('filter'),74)).hexdigest()==
+                    '8aefdb7c31f5e456688d6564c9d5cf5829ba370ab62d40375a21fa020ecd8078',
+                    'Composite USB setup policy instructions changed')
             for name in ('fm1_uac_desc_config','fm1_usb_audio_dac','fm1_usb_audio_stop','fm1_uac_descriptor','fm1_uac_dma','fm1_audio_queue_raw24','fm1_peripheral_usb_audio_quiesce'):
                 require(name in symbols,'Missing composite audio component '+name)
             audio_dma,audio_size,_=symbols['fm1_uac_dma']

@@ -129,6 +129,7 @@
 !/firmware/usb-diag/tests/protocol_bridge.c
 !/firmware/usb-diag/tests/protocol_tests.c
 !/firmware/usb-diag/tests/rx_channel_tests.c
+!/firmware/usb-diag/tests/usb_policy_tests.c
 !/firmware/usb-diag/usb_control.h
 !/firmware/usb-diag/usb_policy.c
 !/firmware/usb-diag/vendor_overlay.py
@@ -144,6 +145,7 @@
 !/scripts/jltool_update.py
 !/scripts/release.py
 !/tests/test_app_update.py
+!/tests/test_build_config.py
 !/tests/test_lcd_references.py
 !/tests/test_overlay_notices.py
 !/tests/test_release.py
