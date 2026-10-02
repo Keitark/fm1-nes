@@ -1,7 +1,6 @@
 # Custom firmware development for the M-VAVE FM-1
 
-[![Status: experimental](https://img.shields.io/badge/status-experimental-orange)](#verification-status)
-[![MIDI: hardware unverified](https://img.shields.io/badge/MIDI-hardware%20unverified-orange)](#verification-status)
+[![Status: experimental](https://img.shields.io/badge/status-experimental-orange)](VALIDATION.md)
 [![Licenses: mixed](https://img.shields.io/badge/licenses-Apache--2.0%20%2B%20GPLv3-blue)](THIRD_PARTY.md)
 
 This repository shares resources, board-support code and a worked example of
@@ -13,6 +12,25 @@ The NES player is an example that exercises the display, audio, keys, knobs and
 real-time scheduling together. Use it as a reference, or replace it with your own
 application. This is an independent, experimental project, not an official
 M-VAVE or Jieli release. No commercial game ROM or stock firmware is included.
+
+## Playing NES: controls
+
+The current NES example maps the FM-1's 27 note keys directly to NES controller 1.
+The note names below refer to the **physical key positions from left to right**
+(lowest F through highest G); synth octave/transpose settings do not change this mapping.
+
+| NES control | FM-1 key |
+| --- | --- |
+| D-pad Left | Lowest F |
+| D-pad Down | First G |
+| D-pad Up | First G# |
+| D-pad Right | First A |
+| Select | First A# |
+| Start | First C# |
+| B | Highest F |
+| A | Highest G |
+
+This is the mapping implemented by the current firmware example.
 
 ## Application-only programming: tested on V14
 
@@ -92,18 +110,6 @@ These are references, not bundled dependencies or guarantees that their images
 and commands work on your board. Community findings must be checked against the
 actual firmware and hardware. See the guide's [AI-agent starting prompt](GETTING_STARTED.md#ai-agent-starting-prompt).
 
-## Verification status
-
-**The MIDI path has not yet been confirmed by the maintainer on hardware.**
-Treat MIDI input/output, patch/parameter SysEx and MIDI/SysEx firmware upload as
-unverified for this project. Stock documentation and source-code analysis are
-references, not evidence of successful end-to-end hardware tests here.
-
-USB CDC serial and Jieli UBOOT are separate from MIDI. Their implementation does
-not establish MIDI support. The SysEx section below describes a possible future
-transport, not a confirmed upload path. Local build and host-test evidence is
-recorded in [VALIDATION.md](VALIDATION.md); it is not hardware certification.
-
 ## Start with USB serial and a way back to UBOOT
 
 Our recommended first custom firmware is small: **USB CDC serial diagnostics,
@@ -168,25 +174,6 @@ to exist in the stock firmware. Recheck the transition on your exact build and
 device. The V14 composite application passed this transition in the test above;
 the separate USB-only first-milestone artifact remains hardware-unqualified.
 See [VALIDATION.md](VALIDATION.md).
-
-### What about SysEx uploads?
-
-**Status: unverified on hardware by the maintainer. No working MIDI/SysEx
-firmware-upload path is claimed by this repository.**
-
-**MIDI SysEx can be another update transport**, if the running firmware or
-bootloader implements a matching update protocol. That requires both receiver
-and uploader support: framing, image validation, flash layout and a recovery
-strategy. It is an alternative development option, not an uploader supplied by
-this source release.
-
-DX7-style **patch/parameter SysEx is not firmware upload**. Likewise, this
-example's CDC `BEGIN`/`DATA`/`END` commands only verify received length and CRC;
-they do not store or install an image, and `COMMIT` is deliberately blocked.
-The implemented iteration route is serial **entry into UBOOT**, followed by a
-separate compatible writer—not self-flashing over CDC or SysEx. A software
-upload route also cannot replace forced-entry recovery when that software no
-longer runs.
 
 ## What the example provides
 
