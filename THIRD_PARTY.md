@@ -18,6 +18,25 @@ Review ownership of any future additions before publishing them.
   by the build. No SDK files or libraries are bundled in this source archive.
 - **Jieli pi32v2 compiler/toolchain**: externally installed; not bundled and no
   redistribution rights are asserted here.
+- **kagaimiq/jl-misctools**, copyright 2023 Andrey Grigoryev, MIT.
+  Upstream: https://github.com/kagaimiq/jl-misctools
+  Revision: `0a5b12db0ef38f3042acffbe2452730a37fd2405`.
+  `scripts/jl_formats.py` adapts ENC/SFC and stored encoding-metadata routines
+  from `firmware/jltech/{cipher,chipkeybin}.py`, with bounded FM-1 parsing and
+  sparse planning. CRC-16 uses standard `binascii.crc_hqx`. No upstream extraction
+  CLI, stock data or actual device encoding value is bundled.
+- **kagaimiq/jl-uboot-tool**, copyright 2023 Andrey Grigoryev, MIT source.
+  Upstream: https://github.com/kagaimiq/jl-uboot-tool
+  Revision: `adb3f18889e88ac512ce0a3c4d8cc3d3cb30696a`.
+  `tools/jltool-fm1-guards.patch.txt` transfers existing bench modifications for
+  strict identity/transfer checks, 256-byte I/O, scoped sector writes and skipped
+  optional chip-key query. Its upstream source context is MIT licensed.
+  `scripts/jltool_update.py` calls the external patched tool, not a new USB writer.
+  Tools/loader binaries are not bundled; source licensing is not asserted to
+  license vendor-derived loader blobs.
+
+`licenses/kagaimiq-MIT.txt` retains the MIT copyright/license notice for these
+adaptations and patch context. Retain the external tool's original LICENSE too.
 
 `licenses/Apache-2.0.txt` contains the dependency license text. Build-time overlays
 in `firmware/usb-diag/vendor_overlay.py` adapt the pinned SDK USB implementation
@@ -43,8 +62,9 @@ In particular, the two `panel_init` arrays retain a 21-record table recovered
 from FM-1_010. Excluding full stock images does not mean that no stock-derived
 data remains. Its publication review is recorded separately in PUBLICATION.md.
 This is **not a claimed clean-room implementation**. The public source retains
-that provenance and does not include stock ROMs, raw disassembly, firmware
-patch payloads, chip keys, downloaded vendor archives or private evidence logs.
+that provenance and does not include stock ROMs, raw disassembly, executable
+stock firmware patch payloads, chip keys, downloaded vendor archives or private
+evidence logs. The newly included jltool patch modifies MIT Python source only.
 Power verification here checks the pinned SDK's generated instructions and
 reviewed parameters, not a redistributed stock image.
 

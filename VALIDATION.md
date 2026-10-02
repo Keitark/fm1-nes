@@ -1,5 +1,37 @@
 # Source-release validation
 
+## Application-only package and jltool wrapper — 2026-10-02
+
+- Added deterministic `fm1-app-v1` packaging with exactly application/manifest,
+  bound to the passed application's static audit. No full-ROM generation or
+  stock input in the distributable application package.
+- Added sparse planning from the owner's private backup and a wrapper invoking
+  existing guarded `jluboottool.py` commands. No new USB protocol, interpreter,
+  installed packages, automatic reset/retry or device operations.
+- **18/18 new synthetic tests passed**, including archive/audit rejection,
+  both allocations, growth after a smaller update, cipher/sector boundaries,
+  full-slot config preservation, valid-CRC unsupported layouts, stale preimages,
+  write/readback failures and directory-last ordering.
+- **40/40 source tests and 25/25 NES plus 27/27 USB host tests passed**. Existing
+  pinned dependency checkouts were selected through the documented environment
+  variables after the first host invocation rejected missing default paths.
+  No dependency was installed. The existing MSVC code-page warning is non-fatal.
+- Private, offline comparison against the old full-image transform: **all 49
+  changed sectors match byte-for-byte for both 010 and V14 baselines**, using
+  the previously audited 198480-byte diagnostic application. All other sectors
+  are unchanged. The old transform was used in memory only for this comparison;
+  the new planner never constructs a full candidate. No private bytes were
+  added to the source inventory.
+- The transferred source patch applied to a separate local upstream checkout
+  and reproduced the exact existing guard-file/helper hashes. Existing bench
+  checkout also passed the read-only tool check; it was not modified.
+- Source inventory: **128 files**. Generated `.fm1app` packages, private plans,
+  sector/restore files, backups, logs and external loader blobs remain excluded.
+- These results qualify offline behavior only. No write/reset/USB command was
+  performed and the new wrapper/application remains **hardware-unqualified**.
+
+Earlier dated records below remain historical evidence for their own revisions.
+
 Local verification on 2026-09-29, Windows, Python 3.11, Visual Studio 2022/MSVC
 19.44 and existing Jieli clang 4.0.1/pi32v2 tools. Dependencies were clean at the
 README pins. No newly installed environment and no device operations.
