@@ -4,6 +4,10 @@
 #include "usb/device/usb_stack.h"
 #include "rx_channel.h"
 #include "boot_entry.h"
+#ifdef FM1_USB_AUDIO
+#include "target.h"
+#include "peripherals.h"
+#endif
 
 extern int fm1_cdc_ready(usb_dev id);
 extern volatile unsigned fm1_cdc_generation;
@@ -31,6 +35,11 @@ void fm1_usb_rx_irq(struct usb_device_t *device) {
     if(!fm1_cdc_ready(id))return;
     if(n>sizeof(bytes)) {channel.fault=1;channel.armed=0;return;}
     if(fm1_rx_receive(&channel,bytes,n,timer_get_ms())) {
+#ifdef FM1_USB_AUDIO
+        /* Confirmation, not arm: a cancelled/expired arm keeps audio alive.
+           Worker is already idle. No SDK close/allocation/task call here. */
+        fm1_usb_audio_stop();fm1_peripheral_usb_audio_quiesce();
+#endif
         go_mask_usb_updata();
         for(;;) {} /* SDK entry must not return to the running application. */
     }
@@ -41,6 +50,7 @@ unsigned fm1_usb_rx_take(uint8_t *out, unsigned limit) {
     consumed_generation=channel.generation; local_irq_enable();
     return n;
 }
+__attribute__((noinline,used))
 int fm1_usb_boot_arm(void) {
     int ok;
     local_irq_disable(); sync_channel();

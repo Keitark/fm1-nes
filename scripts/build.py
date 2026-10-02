@@ -16,9 +16,11 @@ def main():
     p.add_argument('target',choices=('host','firmware'))
     p.add_argument('--rom',type=Path);p.add_argument('--rom-sha256')
     p.add_argument('--out',type=Path,help='Firmware output directory (default build/firmware)')
+    p.add_argument('--usb-audio',action='store_true',help='Optional MDX-derived UAC1 stereo duplex plus CDC profile')
+    p.add_argument('--package',type=Path,help='Create a fresh app-only .fm1app after a passed static audit; no device I/O')
     a=p.parse_args();check(CORE,CORE_PIN);check(SDK,SDK_PIN)
     if a.target=='host':
-        if a.rom or a.rom_sha256 or a.out:p.error('ROM/output arguments apply only to firmware')
+        if a.rom or a.rom_sha256 or a.out or a.usb_audio or a.package:p.error('ROM/output/audio/package arguments apply only to firmware; host tests cover both profiles')
         for source,folder in (('firmware/nes','build/host-nes'),('firmware/usb-diag','build/host-usb')):
             run(['cmake','-S',source,'-B',folder,f'-DPython3_EXECUTABLE={sys.executable}'])
             run(['cmake','--build',folder,'--config','Release','--parallel','4'])
@@ -38,7 +40,13 @@ def main():
            '--lcd-stock-sequence','--nes-player','--keyscan-dma2','--nes-input-recovery',
            '--keyscan-irq','--keyscan-paced','--nes-audio-priority','--nes-live-fx','--nes-channel-fx',
            '--nes-render-skip','--lcd-async','--lcd-spi30','--lcd-rgb444','--lcd-direct','--nes-tiles','--nes-volume']
-    run([sys.executable,ROOT/'firmware/usb-diag/build.py',*flags,'--rom',rom,'--rom-sha256',digest,
-         '--out',(a.out or ROOT/'build/firmware').resolve()])
+    if a.usb_audio:flags+=['--usb-audio']
+    output=(a.out or ROOT/('build/firmware-audio' if a.usb_audio else 'build/firmware')).resolve()
+    if a.package and a.package.exists():p.error('Package already exists; choose a fresh output')
+    run([sys.executable,ROOT/'firmware/usb-diag/build.py',*flags,'--rom',rom,'--rom-sha256',digest,'--out',output])
+    if a.package:
+        from app_package import create
+        info=create(output/'fm1-usb-diag.app.bin',output/'static-audit.json',a.package.resolve())
+        print('Created application-only package:',a.package.resolve(),info['application_sha256'])
 
 if __name__=='__main__':main()

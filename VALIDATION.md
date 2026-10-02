@@ -1,5 +1,43 @@
 # Source-release validation
 
+## MDX USB audio/CDC and app-only integration — 2026-10-02
+
+- Reused generic MDX USB code at `41410578152eec195b534b3acfe2fa1b10e7476e`:
+  UAC1 stereo duplex plus CDC, bounded packet submission, stream epochs and
+  CPU0 ownership. GPLv3 notices/license are preserved; no MDX songs/player,
+  stock image or loader blob was transferred.
+- Added NES pre-volume capture and PC playback mixing. One persistent DAC
+  continues when NES is stopped; its IRQ provides the existing volume ADC
+  cadence without adding interrupts or a competing scanner ADC owner.
+- **25/25 NES and 34/34 USB host checks passed**. New checks cover the actual
+  descriptor tree, elastic stereo bridge, stream lifecycle, 100000 mixed packet
+  submissions, 600 virtual seconds each of normal/stressed USB service, and
+  the NES adapter's pre-volume/no-loopback routing and volume without CDC.
+- **12/12 composite linked-image corruption checks passed**, including boot
+  trace, CPU0 task pointers, UAC descriptor, packet DMA/doorbell/IRQ restore,
+  capture call removal and power destinations/gateway. Boot/power templates
+  remain fail-closed; reviewed RAM-offset relocations are narrowly admitted.
+- **40/40 source/package guard tests passed**, for **111 checks** in total
+  across source, NES host, USB host and composite linked-image suites.
+- Composite target link/static audit passed: **201296 application bytes**,
+  SHA256 `c3f457957390771857a3b3d9b923d61579696a78131bb553ce4e5bb8cbeb98a8`.
+  Internal heap reserve is **217676 bytes**. This build uses the original
+  diagnostic NES cartridge, not a commercial ROM.
+- CDC-only target also linked/audited: **198384 bytes**, SHA256
+  `d83e59d467da83210c34acd8bc202170138a8b884dee21e84d24ecf3886c9ce4`.
+- `scripts/build.py firmware --usb-audio --package ...` invokes the existing
+  app-only packager after the passed audit. Its two-member package validated;
+  an offline plan against a reviewed owner V14 backup contains **50 changed
+  sectors**, directory last, with boot/configuration preservation checks.
+  No full-ROM candidate or new hardware writer is created.
+- Source inventory is **147 files**. Build artifacts, app packages, private
+  backups/plans and local logs are excluded. Root/dependency licenses remain
+  mixed; the current linked examples are not Apache-only binaries.
+- Existing Python/compiler/pinned dependencies were reused. No environment
+  install, device operation, flash, reset or repository visibility change.
+  Physical enumeration, sustained duplex/concurrent CDC, volume and recovery
+  remain unqualified for this port; MDX session results do not certify it.
+
 ## Application-only package and jltool wrapper — 2026-10-02
 
 - Added deterministic `fm1-app-v1` packaging with exactly application/manifest,

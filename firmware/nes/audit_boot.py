@@ -7,6 +7,7 @@ import struct
 from embed_rom50 import ROMS
 from audit_power import audit_power, call_target
 from audit_pre_os import audit_pre_os
+from audit_usb_packet import audit_usb_packet
 
 XIP=0x02000120
 RAM=0x01c00000
@@ -19,7 +20,8 @@ def require(condition,message):
     if not condition: raise ValueError(message)
 
 
-def audit(elf,app,require_peripherals=False,rom='rom50',display_only=False,require_boot_trace=False,require_board_power=False,require_screen_first=False,usb_only=False,usb_peripheral_tests=False,usb_nes=False):
+def audit(elf,app,require_peripherals=False,rom='rom50',display_only=False,require_boot_trace=False,require_board_power=False,require_screen_first=False,usb_only=False,usb_peripheral_tests=False,usb_nes=False,usb_audio=False):
+    require(not usb_audio or usb_nes,'Composite audio requires the NES peripheral profile')
     require(not usb_nes or (usb_only and usb_peripheral_tests and rom=='smb1'),'NES CDC requires explicit SMB1 peripheral profile')
     require(not usb_peripheral_tests or usb_only,'Peripheral diagnostic requires USB transport audit')
     require(not usb_only or not (require_peripherals or display_only or require_screen_first),'Conflicting USB-only audit')
@@ -83,6 +85,18 @@ def audit(elf,app,require_peripherals=False,rom='rom50',display_only=False,requi
         code=code_at(address,6)
         require(code[:2]==b'\x80\xff','Expected reviewed startup long call')
         return address+6+struct.unpack_from('<i',code,2)[0]
+    def calls_to(owner,target):
+        require(owner in symbols,'Missing audited call owner '+owner)
+        start,size,_=symbols[owner];body=code_at(start,size);hits=[]
+        for offset in range(0,size-3,2):
+            ins=body[offset:offset+6]
+            if ins[:2]==b'\x80\xff' and len(ins)==6:
+                dest=call_target(ins,start+offset)
+            elif ins[0]&0xc0==0x80 and ins[1]==0xea:
+                dest=call_target(ins[:4],start+offset)
+            else:continue
+            if dest==value(target):hits.append(offset)
+        return hits
     require(not any(name in symbols for name in ('fm1_tile_test_reference',
             'fm1_reference_background','fm1_reference_sprite')),'Host tile oracle linked into target')
     if 'fm1_volume_start' in symbols:
@@ -195,6 +209,12 @@ def audit(elf,app,require_peripherals=False,rom='rom50',display_only=False,requi
             # reviewed __wrap_memory_init0x2003362, store0x2003370:
             # d1 ec 07 15 = [++r0=340] = r1. Same46-byte wrapper/22-byte marker.
             if usb_nes:encodings.update({340:'d1 ec 07 15'})
+            # Composite NES: ota_status0x1c46db0 +352 = trace0x1c46f10.
+            # Reviewed store0x2003364 d1 ec03 16; same46-byte wrapper.
+            if usb_audio:encodings.update({352:'d1 ec 03 16'})
+            # Persistent ADC cadence accumulator adds4 bytes: reviewed same
+            # store0x2003364 d1 ec07 16 now targets ota_status+356.
+            if usb_audio:encodings.update({356:'d1 ec 07 16'})
             require(delta in encodings,'USB trace merged-global offset changed: '+str(delta))
             struct.pack_into('<I',expected_wrapper,4,value('ota_status'))
             expected_wrapper[14:16]=bytes.fromhex(encodings[delta])
@@ -259,8 +279,8 @@ def audit(elf,app,require_peripherals=False,rom='rom50',display_only=False,requi
     task_table=value('task_info_table')
     expected_tasks=(('app_core',15,4096,1024),('sys_event',29,512,0),
                     ('systimer',14,256,0),('sys_timer',9,512,128),
-                    (('usb_diag',10,2048,0) if usb_only else ('fm1_nes',10,4096,0)))
-    if usb_peripheral_tests:expected_tasks+=(('peripheral',8,4096 if usb_nes else 2048,0),)
+                    (('#C0usb_diag',10,2048,0) if usb_only else ('fm1_nes',10,4096,0)))
+    if usb_peripheral_tests:expected_tasks+=((('#C0peripheral' if usb_audio else 'peripheral'),8,4096 if usb_nes else 2048,0),)
     require(symbols['task_info_table'][1]==20*(len(expected_tasks)+1),
             'SDK/NES task table size changed')
     for i,(name,priority,stack,queue) in enumerate(expected_tasks):
@@ -309,6 +329,28 @@ def audit(elf,app,require_peripherals=False,rom='rom50',display_only=False,requi
         for name in ('cdc_read_data','cdc_write_data','fm1_cdc_ready','fm1_usb_dma','fm1_diag_feed'):
             require(name in symbols,'Missing USB diagnostic '+name)
         descriptor=bytes((18,1,0,2,2,2,1,64,0x54,0x36,0x55,0x51,0,2,1,2,0,1))
+        audit_usb_packet(symbols,code_at,composite=usb_audio)
+        if usb_audio:
+            descriptor=bytes((18,1,0,2,0xef,2,1,64,0x54,0x36,0x55,0x51,3,2,1,2,0,1))
+            for name in ('fm1_uac_desc_config','fm1_usb_audio_dac','fm1_usb_audio_stop','fm1_uac_descriptor','fm1_uac_dma','fm1_audio_queue_raw24','fm1_peripheral_usb_audio_quiesce'):
+                require(name in symbols,'Missing composite audio component '+name)
+            audio_dma,audio_size,_=symbols['fm1_uac_dma']
+            require(audio_size==512 and audio_dma%64==0 and bss[3]<=audio_dma and audio_dma+audio_size<=bss[3]+bss[5],
+                    'Audio DMA size/alignment/internal-RAM placement changed')
+            require(symbols['fm1_uac_descriptor'][1]==173 and hashlib.sha256(code_at(value('fm1_uac_descriptor'),173)).hexdigest()==
+                    '820961a648e4bf17faa19a3bdd788f7a70205ff0600b5fbb35c069deb7219d8d','UAC1 interface/terminal/format/endpoint descriptor changed')
+            raw=calls_to('audio_output','fm1_audio_queue_raw24')
+            mix=calls_to('audio_output','fm1_usb_audio_dac')
+            gain=calls_to('audio_output','fm1_audio_startup_process24')
+            require(len(raw)==1 and any(raw[0]<m<g for m in mix for g in gain),'NES USB pre-volume capture/mix call order changed')
+            stop=calls_to('fm1_usb_rx_irq','fm1_usb_audio_stop')
+            quiet=calls_to('fm1_usb_rx_irq','fm1_peripheral_usb_audio_quiesce')
+            reboot=calls_to('fm1_usb_rx_irq','go_mask_usb_updata')
+            require(len(stop)==len(quiet)==len(reboot)==1 and stop[0]<quiet[0]<reboot[0],
+                    'Confirmed UBOOT audio teardown changed')
+            require(not calls_to('fm1_usb_boot_arm','fm1_usb_audio_stop') and
+                    not calls_to('fm1_usb_boot_arm','fm1_peripheral_usb_audio_quiesce'),
+                    'UBOOT arm must not prematurely stop audio')
         require(code_at(value('fm1_usb_device_descriptor'),18)==descriptor,
                 'USB CDC device descriptor changed')
         require(code_at(value('fm1_usb_config_descriptor'),9)==bytes((9,2,0,0,0,1,0,0x80,50)),
@@ -403,7 +445,7 @@ def audit(elf,app,require_peripherals=False,rom='rom50',display_only=False,requi
         addr,size,_=symbols['cartridge'];start=addr-XIP
         require(size==rom_size and 0<=start and start+size<=sections['.text'][5],'Cartridge is not wholly in XIP')
         require(hashlib.sha256(data(sections['.text'])[start:start+size]).hexdigest()==rom_sha,'Embedded cartridge hash mismatch')
-    power_report=audit_power(symbols,sections,code_at,required=require_board_power,usb_only=usb_only)
+    power_report=audit_power(symbols,sections,code_at,required=require_board_power,usb_only=usb_only,usb_audio=usb_audio)
     pre_os_report=audit_pre_os(symbols,code_at)
     require(not require_screen_first or power_report.get('screen_first',False),'Missing screen-first board hook')
     return {'static_audit':'passed','entry':hex(entry),'application_bytes':len(app),

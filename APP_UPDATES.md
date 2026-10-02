@@ -30,6 +30,11 @@ layout/bootloader is a stop condition; do not force an update.
 
 ## Offline package and plan
 
+For the MDX-derived USB-audio/CDC profile, build and package in one offline
+command: `python scripts/build.py firmware --usb-audio --package build/audio-v1.fm1app`.
+This calls the same app-only packager, not a different writer. See
+[USB_AUDIO.md](USB_AUDIO.md). Raw app.bin must not be written directly.
+
 Use the existing Python 3.11 installation. Package/plan need only its standard
 library and never contact USB:
 
