@@ -1,3 +1,5 @@
+/* MDX-derived CPU0/session packet integration: GPL-3.0-only;
+ * original FM1 source portions retain Apache-2.0 terms. See THIRD_PARTY.md. */
 #include "app_config.h"
 #include "system/includes.h"
 #include "system/task.h"
@@ -8,6 +10,9 @@
 #include "boot_trace.h"
 #include "protocol.h"
 #include "boot_entry.h"
+#ifdef FM1_USB_AUDIO
+#include "target.h"
+#endif
 #ifdef FM1_PERIPHERAL_TESTS
 #include "peripherals.h"
 #endif
@@ -16,10 +21,14 @@ const struct irq_info irq_info_table[]={{-1,-1,-1}};
 const struct task_info task_info_table[]={
     {"app_core",15,4096,1024},{"sys_event",29,512,0},
     {"systimer",14,256,0},{"sys_timer",9,512,128},
-    {"usb_diag",10,2048,0},
+    {"#C0usb_diag",10,2048,0},
 #ifdef FM1_PERIPHERAL_TESTS
 #ifdef FM1_NES_PLAYER
+#ifdef FM1_USB_AUDIO
+    {"#C0peripheral",8,4096,0},
+#else
     {"peripheral",8,4096,0},
+#endif
 #else
     {"peripheral",8,2048,0},
 #endif
@@ -33,6 +42,7 @@ static char tx[1024];
 static unsigned tx_r,tx_w;
 extern int fm1_cdc_ready(usb_dev id);
 extern volatile unsigned fm1_cdc_generation;
+extern u32 fm1_cdc_write_packet(usb_dev id,u8 *data,u32 size,unsigned generation);
 
 static void reply(void *ctx,const char *s) {
     unsigned n=strlen(s),i; (void)ctx;
@@ -44,6 +54,9 @@ static void fm1_usb_task(void *arg) {
     uint8_t rx[64],out[63]; unsigned generation=0,i,n; uint32_t last=0;
     (void)arg; fm1_boot_trace_mark(FM1_TRACE_WORKER); fm1_usb_stage=2;
     /* Explicit single-controller candidate. No host/OTG detection or VBUS drive. */
+#ifdef FM1_USB_AUDIO
+    fm1_usb_audio_init();
+#endif
     fm1_usb_error=usb_device_mode(FM1_USB_CONTROLLER,CDC_CLASS);
     if(fm1_usb_error) { fm1_usb_stage=0xff; for(;;)os_time_dly(100); }
     fm1_usb_stage=3;
@@ -85,6 +98,13 @@ static void fm1_usb_task(void *arg) {
 #ifdef FM1_PERIPHERAL_TESTS
             if(protocol.test_requested) {
                 unsigned test=protocol.test_requested;protocol.test_requested=0;
+#ifdef FM1_USB_AUDIO
+                if(test==6) {
+                    char status[224];
+                    fm1_usb_audio_status(status,sizeof(status));reply(NULL,status);
+                    fm1_usb_audio_transport_status(status,sizeof(status));reply(NULL,status);
+                }
+#endif
                 if(fm1_usb_boot_pending() || fm1_peripheral_request(test,generation))reply(NULL,"ERR TEST_BUSY\n");
                 else reply(NULL,"OK TEST REQUEST\n");
             }
@@ -107,7 +127,7 @@ static void fm1_usb_task(void *arg) {
              * One owner/task for CDC data mutex; ISR never transmits. */
             n=tx_w-tx_r; if(n>sizeof(out))n=sizeof(out);
             for(i=0;i<n;i++)out[i]=tx[(tx_r+i)%sizeof(tx)];
-            if(n)tx_r+=cdc_write_data(FM1_USB_CONTROLLER,out,n);
+            if(n)tx_r+=fm1_cdc_write_packet(FM1_USB_CONTROLLER,out,n,generation);
         }
         os_time_dly(1);
     }

@@ -2,7 +2,7 @@
 
 [![Status: experimental](https://img.shields.io/badge/status-experimental-orange)](#verification-status)
 [![MIDI: hardware unverified](https://img.shields.io/badge/MIDI-hardware%20unverified-orange)](#verification-status)
-[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+[![Licenses: mixed](https://img.shields.io/badge/licenses-Apache--2.0%20%2B%20GPLv3-blue)](THIRD_PARTY.md)
 
 This repository shares resources, board-support code and a worked example of
 **how to develop custom firmware for the FM-1**, based on the Jieli WL82. The
@@ -12,7 +12,62 @@ instruments, effects and other applications—not to turn the FM-1 into an NES b
 The NES player is an example that exercises the display, audio, keys, knobs and
 real-time scheduling together. Use it as a reference, or replace it with your own
 application. This is an independent, experimental project, not an official
-M-VAVE or Jieli release. No game ROM or stock firmware is included.
+M-VAVE or Jieli release. No commercial game ROM or stock firmware is included.
+
+## Application-only programming: tested on V14
+
+**Build the complete application; update only its changed flash sectors.**
+The `.fm1app` package contains exactly `app.bin` and `manifest.json`, **not the
+stock bootloader**. Keep the working bootloader already installed on your FM-1.
+The source export neither rebuilds nor distributes that loader.
+
+| Address / artifact | Meaning |
+| --- | --- |
+| Physical flash `0x0000..0x3FFF` | Existing boot/header/config; preserved, never written by this scheme |
+| Physical flash `0x4000`, record `0x4020` | Application directory/header; required size/CRC metadata updated |
+| Physical flash **`0x4120`** | Start of the installed application payload, after the `0x120`-byte directory prefix |
+| CPU address **`0x02000120`** | Application entry address; **not** a flash write offset |
+| `.fm1app` | Application and sanitized manifest only |
+| Owner backup / sector plan | Private unit-derived data; never publish these |
+
+Do **not** issue a raw write of `app.bin` at `0x4120`: the planner must validate
+the installed layout, encode the application, update metadata and preserve
+shared erase-sector bytes. Only reviewed layouts/boot hashes are accepted;
+the version label alone does not establish compatibility.
+
+On **2026-10-03**, the app-only scheme was tested on the maintainer's FM-1
+with an installed **V14** baseline: **51 changed 4 KiB sectors**, directory last,
+and **one complete final readback** matched. Bootloader/configuration/reserved
+regions were preserved. Serial UBOOT entry, reset, normal USB CDC plus both
+audio endpoints, advancing NES frames and changing volume telemetry were
+observed, with zero reported faults/underruns during that observation.
+This used the existing private elevated Jieli writer with the public
+packager/planner; the standalone public wrapper's full hardware command sequence
+has **not** independently been bench-qualified. Physical screen/BGM/controls and
+sustained duplex audio remain separate acceptance checks. No compatibility
+claim is made for every FM-1 revision. See [VALIDATION.md](VALIDATION.md).
+
+Start with [APP_UPDATES.md](APP_UPDATES.md) for the existing-tool guard patch,
+offline package/plan and explicit load/backup/flash/reset commands.
+Read the [ROM guide](ROM_GUIDE.md) to build the original diagnostic or select
+your own compatible homebrew cartridge. A `.nes` cartridge is embedded in
+`app.bin`; it is **not** itself an FM-1 firmware image or a separate flash slot.
+
+## Research and attribution
+
+Development has used the Jieli AC79 SDK, publicly available research, device
+testing, and analysis of stock firmware behavior. This source release excludes
+stock firmware images, raw disassembly, chip keys and commercial game ROMs;
+it does contain stock-derived board parameters and an LCD initialization table.
+It is not presented as a clean-room implementation.
+
+Third-party components and adaptations retain their applicable licenses and
+attribution. The project license applies only to material we have the right to
+license. See [THIRD_PARTY.md](THIRD_PARTY.md), the focused
+[source-reference map](PROVENANCE.md), and the
+[publication checklist](PUBLICATION.md). Technical checks do not establish
+redistribution rights. Source-only publication is the maintainer's decision;
+it is not legal clearance or authorization to redistribute generated binaries.
 
 **New to FM-1 development? Start with the [custom-firmware starting guide](GETTING_STARTED.md).**
 It includes a minimal USB-only build, bring-up checkpoints and a copyable prompt
@@ -110,8 +165,9 @@ The CDC command path is in [protocol.c](firmware/usb-diag/protocol.c),
 
 This two-step confirmation is part of our custom firmware, not a command claimed
 to exist in the stock firmware. Recheck the transition on your exact build and
-device. The source export's diagnostic artifact remains unflashed/unqualified;
-see [VALIDATION.md](VALIDATION.md).
+device. The V14 composite application passed this transition in the test above;
+the separate USB-only first-milestone artifact remains hardware-unqualified.
+See [VALIDATION.md](VALIDATION.md).
 
 ### What about SysEx uploads?
 
@@ -179,9 +235,11 @@ ignored `.deps/` directories. It never replaces an existing checkout. Upstream
 availability and a fresh network clone were not tested for this release; builds
 were verified against existing clean checkouts at the stated revisions.
 
-The default firmware build generates an original checkerboard/pulse/controller
-diagnostic ROM from source. It needs neither a commercial ROM nor a stock dump.
-Build outputs go under ignored `build/`.
+On a fresh checkout the default firmware build generates an original
+checkerboard/pulse/controller diagnostic ROM from source. It needs neither a
+commercial ROM nor a stock dump. An optional ignored `local/rom.json` can select
+your own persistent cartridge default; `--diagnostic` explicitly ignores it.
+Build outputs go under ignored `build/`. See [ROM_GUIDE.md](ROM_GUIDE.md).
 
 To embed your own lawfully obtained ROM instead:
 
@@ -208,27 +266,54 @@ The ELF, build manifest and `static-audit.json` accompany it. Entry instructions
 memory sections, power-init code, boot compatibility and embedded ROM are checked.
 Audits still fail closed on an unexpected SDK layout or code change.
 
-This source release intentionally omits the stock-image packager, vendor images,
-recovery blobs and all PC-side flash/elevation tools. It does not reproduce or
-distribute the device's bootloader/configuration regions. **Do not write the
-application binary directly over the full flash.** Existing private recovery and
-flash workflows are separate and unchanged. The clean diagnostic build has not
-been flashed or hardware-qualified. Firmware CDC boot-entry support remains in
-source; running a build does not contact the device.
+An application-only packager and wrapper around the existing guarded Jieli
+writer are now provided: see [APP_UPDATES.md](APP_UPDATES.md). Packages contain
+only the caller's audited application and minimal manifest, not full ROMs.
+The offline planner prepares private changed sectors from the owner's backup,
+preserving bootloader, configuration and application placement. The wrapper
+and source-only guard patch do not bundle RAM loaders, vendor images, SDK
+binaries, recovery blobs or an elevation server.
+
+**Do not write the application binary directly over the full flash.** Hardware
+operations require an explicit wrapper subcommand; package/plan/build commands
+do not contact the device. The V14 app-only scheme was tested using the existing
+private writer; the standalone wrapper is offline-tested, not independently
+hardware-qualified. Existing private recovery/flash workflows are unchanged.
+Firmware CDC boot-entry support remains in source.
+
+Optional **USB audio plus serial**, reused from the MDX karaoke work, is
+available with `--usb-audio`. See [USB_AUDIO.md](USB_AUDIO.md) for PC playback,
+NES capture, volume ownership, build/package commands and the unchanged
+app-only Jieli programming method. V14 startup/USB/telemetry observations are
+recorded above; sustained audio acceptance remains pending. Imported GPLv3 code
+means the combined current firmware
+examples are not Apache-only binaries.
 
 ## Source-only release
 
 ```powershell
 python -m unittest discover -s tests -v
-python scripts/release.py
+python scripts/release.py --check --git
+python scripts/release.py --git --output dist/fm1-source-candidate.zip
 ```
 
-This creates `dist/fm1-public-source.zip` using only exact paths in
+This creates `dist/fm1-source-candidate.zip` using only exact paths in
 `public-files.txt`, with a SHA-256 inventory. The restrictive `.gitignore` allows
 only these reviewed source files. New files require an explicit update to both
-lists. Neither mechanism removes a sensitive file already tracked in Git; this
+lists. Choose a fresh `--output` name for another candidate; existing archives
+are never overwritten. Archive entry timestamps and permissions are fixed.
+Neither mechanism removes a sensitive file already tracked in Git; this
 repository was initialized from the reviewed source export, without private
 development history.
+
+The `--git` check requires a non-shallow checkout, matches the tracked-file list
+to the manifest, and checks paths/modes and limited secret patterns across local
+reachable history (including commit/tag messages and deleted files). It does not
+scan remote-only refs, issues, PR discussions, releases, caches or Git LFS payloads.
+The [source-only CI workflow](.github/workflows/source-release.yml) runs the same
+checks with read-only repository permissions and does not upload any artifacts.
+Stage reviewed new files before running the tracked-inventory check. For an
+extracted source ZIP without `.git`, use `--check` without `--git` instead.
 
 **Publish the source archive, not a ZIP of the whole working directory.** Local
 build results can embed your chosen ROM and contain machine-specific paths.
@@ -238,6 +323,13 @@ identifiers, and elevated-session configuration. Packaging includes a limited
 secret-pattern/binary check, not a guarantee against every possible disclosure.
 
 See [VALIDATION.md](VALIDATION.md) for the actual verification results.
+The [publication audit](PUBLICATION_AUDIT.md) records the reviewed source terms,
+boot/power evidence, included SDK-derived audit constants and GitHub surface
+checks. It also separates completed checks from the maintainer's release decision.
+
+The USB descriptor currently retains an SDK VID/PID (`3654:5155`) for local bench
+compatibility, not a project-owned allocation. Resolve identity authorization
+before distributing a USB product; no USB-IF certification is claimed.
 
 ## License
 

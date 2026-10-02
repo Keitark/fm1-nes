@@ -1,0 +1,29 @@
+name: Source release checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+      - name: Test release guards and modification notices
+        run: python -m unittest discover -s tests -v
+      - name: Check source inventory and reachable history
+        run: python scripts/release.py --check --git
+      - name: Package source candidate locally
+        run: python scripts/release.py --git --output dist/ci-source.zip
+      # No upload, dependency/ROM download, firmware build or publication step.

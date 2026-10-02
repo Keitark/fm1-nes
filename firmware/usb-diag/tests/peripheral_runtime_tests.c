@@ -11,9 +11,10 @@ static unsigned lcd_init,lcd_stop,key_start,key_stop,key_polls,iterations;
 static unsigned timer_adds,timer_dels,sem_creates,sem_dels,wake_iterations,sub_ms,raw_calls;
 #ifdef FM1_NES_VOLUME
 static uint32_t volume_con;
+static unsigned volume_sample=512;
 uint32_t fm1_volume_test_read(uint32_t a){
     if(a==0x13100)return volume_con | ((volume_con&0x10)?0x80:0);
-    if(a==0x13104)return 512;
+    if(a==0x13104)return volume_sample;
     return 0;
 }
 void fm1_volume_test_write(uint32_t a,uint32_t v){if(a==0x13100)volume_con=v&~0xc0u;}

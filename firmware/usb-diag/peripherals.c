@@ -1,4 +1,7 @@
 /* Independent, opt-in peripheral worker. Never owns CDC or writes flash. */
+#ifdef FM1_USB_AUDIO
+#include "target.h"
+#endif
 #ifdef FM1_PERIPHERAL_HOST
 #include "fake_peripherals.h"
 #else
@@ -84,6 +87,11 @@ static struct {
     char events[16][128];
 } control;
 static unsigned audio_enabled,audio_session;
+#ifdef FM1_USB_AUDIO
+static unsigned audio_tone;
+static int usb_audio_owner_error;
+static unsigned usb_volume_phase;
+#endif
 static volatile uint32_t audio_frames,audio_irqs,audio_fault;
 static fm1_wl82_keyscan scanner;
 /* Timer IRQ only posts a coalesced wakeup. SPI polling/decoding stays in the
@@ -200,15 +208,28 @@ static void audio_output(void *ctx,u8 *data,int len,u8 channel) {
     unsigned i;int32_t *pcm=(int32_t *)data;(void)ctx;
     if(!data || len<=0)return;
     if(channel!=3 || len!=512){memset(data,0,(unsigned)len);audio_fault=1;return;}
+#ifdef FM1_USB_AUDIO
+    {unsigned flags=take(&input_lock);
+     /* Existing DAC IRQ supplies the 2ms ADC cadence; no additional scanner,
+        timer interrupt or polling wait. 64/44100-second DMA halves. */
+     usb_volume_phase+=64000u;
+     if(usb_volume_phase>=88200u){usb_volume_phase-=88200u;fm1_volume_tick(&nes_volume);}
+     nes_envelope.target_q7=nes_volume.valid?nes_volume.target:0;
+     release(&input_lock,flags);}
+#endif
 #ifdef FM1_NES_PLAYER
     if(audio_nes) {
-#ifdef FM1_NES_VOLUME
+#if defined(FM1_NES_VOLUME) && !defined(FM1_USB_AUDIO)
         /* Lock order audio->input only. Timer never takes audio_lock. */
         unsigned flags=take(&input_lock);
         nes_envelope.target_q7=nes_volume.valid?nes_volume.target:0;
         release(&input_lock,flags);
 #endif
-#ifdef FM1_NES_AUDIO_PRIORITY
+#ifdef FM1_USB_AUDIO
+        fm1_audio_queue_raw24(&nes_queue,pcm);
+        fm1_usb_audio_dac(pcm,64); /* NES capture first, PC return second. */
+        fm1_audio_startup_process24(&nes_envelope,pcm);
+#elif defined(FM1_NES_AUDIO_PRIORITY)
         fm1_audio_queue_play24(&nes_queue,&nes_envelope,pcm);
 #else
         fm1_audio_queue_stereo24(&nes_queue,pcm,64);
@@ -217,12 +238,22 @@ static void audio_output(void *ctx,u8 *data,int len,u8 channel) {
         audio_frames+=64;return;
     }
 #endif
+#ifdef FM1_USB_AUDIO
+    if(!audio_tone || audio_session!=fm1_cdc_generation || !fm1_cdc_ready(FM1_USB_CONTROLLER)) {
+        memset(data,0,(unsigned)len);
+    } else
+#else
     if(audio_session!=fm1_cdc_generation || !fm1_cdc_ready(FM1_USB_CONTROLLER)){memset(data,0,(unsigned)len);return;}
+#endif
     for(i=0;i<64;i++) {
         int32_t value=fm1_test_sample(audio_frames);
         if(audio_frames<FM1_TONE_FRAMES)audio_frames++;
         pcm[2*i]=pcm[2*i+1]=value;
     }
+#ifdef FM1_USB_AUDIO
+    fm1_usb_audio_dac(pcm,64);
+    fm1_audio_startup_process24(&nes_envelope,pcm);
+#endif
 }
 ___interrupt
 static void fm1_test_alink_isr(void) {
@@ -230,7 +261,51 @@ static void fm1_test_alink_isr(void) {
     if(audio_enabled){iis_irq_handler(0);audio_irqs++;}
     release(&audio_lock,flags);
 }
+#ifdef FM1_USB_AUDIO
+/* One persistent 44.1kHz DAC owner, shared by NES, test tone and PC playback.
+   Initialized by the CPU0 peripheral task, never by the USB IRQ. */
+static int usb_audio_owner_start(void) {
+    struct iis_platform_data pd;unsigned flags;int rc;
+    memset(&pd,0,sizeof(pd));pd.port_sel=IIS_PORTC;
+    pd.channel_out=pd.data_width=8;pd.mclk_output=1;pd.sr_points=128;
+    fm1_audio_startup_reset(&nes_envelope);
+    rc=iis_open(&pd,0);if(rc)return rc;
+    iis_set_dec_data_handler(0,audio_output,0);
+    rc=iis_set_sample_rate(44100,0);if(rc){iis_close(0);return rc;}
+    flags=take(&input_lock);usb_volume_phase=0;(void)fm1_volume_start(&nes_volume);release(&input_lock,flags);
+    flags=take(&audio_lock);audio_enabled=1;release(&audio_lock,flags);
+    request_irq(IRQ_ALNK_IDX,3,fm1_test_alink_isr,0);iis_channel_on(8,0);
+    return 0;
+}
+void fm1_peripheral_usb_audio_stop(void) {
+    unsigned flags;
+    bit_clr_ie(IRQ_ALNK_IDX,0);
+    flags=take(&audio_lock);
+    if(!audio_enabled){release(&audio_lock,flags);return;}
+    audio_enabled=audio_nes=audio_tone=0;release(&audio_lock,flags);
+    unrequest_irq(IRQ_ALNK_IDX,0);iis_channel_off(8,0);iis_close(0);
+    flags=take(&input_lock);fm1_volume_stop(&nes_volume);release(&input_lock,flags);
+}
+__attribute__((noinline,used))
+void fm1_peripheral_usb_audio_quiesce(void) {
+    unsigned flags;
+    bit_clr_ie(IRQ_ALNK_IDX,0);flags=take(&audio_lock);
+    audio_enabled=audio_nes=audio_tone=0;release(&audio_lock,flags);
+    flags=take(&input_lock);fm1_volume_stop(&nes_volume);release(&input_lock,flags);
+}
+#endif
 static int audio_test(unsigned epoch,unsigned session) {
+#ifdef FM1_USB_AUDIO
+    int rc;unsigned flags;uint32_t start;
+    if(usb_audio_owner_error)return usb_audio_owner_error;
+    flags=take(&audio_lock);audio_frames=0;audio_session=session;audio_tone=1;release(&audio_lock,flags);
+    start=timer_get_ms();
+    while(!cancelled(epoch,session) && !audio_fault && audio_frames<FM1_TONE_FRAMES && (uint32_t)(timer_get_ms()-start)<4000) {
+        wdt_clear();os_time_dly(1);
+    }
+    rc=audio_fault ? -21 : (!cancelled(epoch,session) && audio_frames<FM1_TONE_FRAMES ? -22 : 0);
+    flags=take(&audio_lock);audio_tone=0;release(&audio_lock,flags);return rc;
+#else
     struct iis_platform_data pd;int rc;unsigned flags;uint32_t start;
     memset(&pd,0,sizeof(pd));pd.port_sel=IIS_PORTC;
     pd.channel_out=pd.data_width=8;pd.mclk_output=1;pd.update_edge=0;pd.f32e=0;pd.sr_points=128;
@@ -249,6 +324,7 @@ static int audio_test(unsigned epoch,unsigned session) {
     flags=take(&audio_lock);audio_enabled=0;release(&audio_lock,flags);
     unrequest_irq(IRQ_ALNK_IDX,0);iis_channel_off(8,0);iis_close(0);
     return rc;
+#endif
 }
 static int input_test(unsigned mode,unsigned epoch,unsigned session) {
     fm1_encoders encoders={0};uint8_t rows[11];uint64_t stable=0,candidate=0;
@@ -320,7 +396,7 @@ static void fm1_nes_scan_tick(void *unused) {
     unsigned flags=take(&input_lock);(void)unused;
     if(nes_input_irq_enabled) {
         ++nes_scan_timer_ticks;
-#ifdef FM1_NES_VOLUME
+#if defined(FM1_NES_VOLUME) && !defined(FM1_USB_AUDIO)
         if(!(nes_scan_timer_ticks&1u))fm1_volume_tick(&nes_volume);
 #endif
 #ifdef FM1_NES_LIVE_FX
@@ -356,7 +432,7 @@ static void nes_scan_stop(void) {
     unsigned flags;
     if(nes_input_irq_registered)bit_clr_ie(IRQ_SPI2_IDX,0);
     flags=take(&input_lock);nes_input_irq_enabled=0;
-#ifdef FM1_NES_VOLUME
+#if defined(FM1_NES_VOLUME) && !defined(FM1_USB_AUDIO)
     fm1_volume_stop(&nes_volume);
 #endif
     if(scanner.running)fm1_wl82_keyscan_stop(&scanner);
@@ -377,7 +453,7 @@ static int nes_scan_start(void) {
     nes_fx_encoders.valid=0; /* Re-prime contacts after recovery, keep counts. */
 #endif
     rc=fm1_wl82_keyscan_async_start(&scanner,0,now_us);
-#ifdef FM1_NES_VOLUME
+#if defined(FM1_NES_VOLUME) && !defined(FM1_USB_AUDIO)
     /* ADC failure leaves game/USB alive but audio muted; errors in telemetry. */
     if(!rc)fm1_volume_start(&nes_volume);
 #endif
@@ -690,6 +766,9 @@ static int fm1_nes_player_run(unsigned epoch,unsigned session) {
     fm1_board_io io={0,nes_lcd,nes_delay,now_us,nes_wait,nes_keys,nes_pcm,nes_stop};
     size_t size;const uint8_t *rom=fm1_rom50_data(&size);unsigned flags;int rc,opened=0;
     nes_epoch=epoch;nes_session=session;nes_frames=0;nes_fault=0;nes_last_log=timer_get_ms();
+#ifdef FM1_USB_AUDIO
+    if(usb_audio_owner_error)return nes_fail("USB_DAC_OPEN",usb_audio_owner_error);
+#endif
 #ifdef FM1_NES_LIVE_FX
     flags=take(&input_lock);memset(&nes_fx_encoders,0,sizeof(nes_fx_encoders));release(&input_lock,flags);
     memset(nes_fx_previous,0,sizeof(nes_fx_previous));
@@ -780,6 +859,9 @@ static int fm1_nes_player_run(unsigned epoch,unsigned session) {
 #endif
     memset(&pd,0,sizeof(pd));pd.port_sel=IIS_PORTC;
     pd.channel_out=pd.data_width=8;pd.mclk_output=1;pd.sr_points=128;
+#ifdef FM1_USB_AUDIO
+    flags=take(&audio_lock);fm1_audio_queue_reset(&nes_queue);audio_frames=0;audio_nes=1;release(&audio_lock,flags);
+#else
     fm1_audio_queue_reset(&nes_queue);fm1_audio_startup_reset(&nes_envelope);
     audio_frames=audio_irqs=audio_fault=0;
     rc=iis_open(&pd,0);if(rc){nes_fail("IIS_OPEN",rc);goto nes_done;}opened=1;
@@ -787,6 +869,7 @@ static int fm1_nes_player_run(unsigned epoch,unsigned session) {
     rc=iis_set_sample_rate(44100,0);if(rc){nes_fail("IIS_RATE",rc);goto nes_done;}
     flags=take(&audio_lock);audio_nes=audio_enabled=1;release(&audio_lock,flags);
     request_irq(IRQ_ALNK_IDX,3,fm1_test_alink_isr,0);iis_channel_on(8,0);
+#endif
 #ifdef FM1_NES_PROFILE
     event("PROF CLOCK=SDK_HALF_MSEC UNIT_US=500 EXCLUSIVE=WALL IRQ_TIME=INCLUDED\n");
     fm1_profile_start(nes_profile_clock);
@@ -797,12 +880,16 @@ nes_done:
     if(rc)nes_fail("CORE",rc); /* Does not replace the originating failure. */
     if(nes_failure[0])event(nes_failure);
     {unsigned i;for(i=0;i<NES_KEY_LINES;i++)if(nes_key_failure[i][0])event(nes_key_failure[i]);}
+#ifdef FM1_USB_AUDIO
+    flags=take(&audio_lock);audio_nes=0;release(&audio_lock,flags);
+#else
     if(audio_enabled) {
         bit_clr_ie(IRQ_ALNK_IDX,0);
         flags=take(&audio_lock);audio_enabled=audio_nes=0;release(&audio_lock,flags);
         unrequest_irq(IRQ_ALNK_IDX,0);iis_channel_off(8,0);
     }
     if(opened)iis_close(0);
+#endif
 #ifndef FM1_NES_NO_KEYS
     nes_scan_stop();
 #endif
@@ -812,6 +899,10 @@ nes_done:
 __attribute__((noinline,used))
 static void fm1_peripheral_task(void *unused) {
     (void)unused;
+#ifdef FM1_USB_AUDIO
+    usb_audio_owner_error=usb_audio_owner_start();
+    if(usb_audio_owner_error)event("USB AUDIO DAC_INIT_FAILED\n");
+#endif
     for(;;) {
         unsigned flags,mode,epoch,session;int rc=0;uint32_t start,last;char line[128];
         flags=take(&control_lock);mode=control.request;control.request=0;epoch=control.request_epoch;session=control.session;

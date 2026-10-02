@@ -116,4 +116,7 @@ void fm1_audio_startup_process24(fm1_audio_startup *, int32_t stereo[128]);
    in one bounded pass. Same lock ownership as the queue; no waits/logging.
    Initial prefill silence is separate from post-start starvation counters. */
 void fm1_audio_queue_play24(fm1_audio_queue *,fm1_audio_startup *,int32_t stereo[128]);
+/* Same prefill/rebuffer policy at unity gain; caller applies master gain after
+   USB capture tap and playback mix. Does not advance a startup envelope. */
+void fm1_audio_queue_raw24(fm1_audio_queue *,int32_t stereo[128]);
 #endif

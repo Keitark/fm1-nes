@@ -2,7 +2,7 @@
 #include <string.h>
 
 /* Recovered from FM-1_010, app offset 0x5000c, 21 x 18-byte records.
-   Record 1 is a 120 ms delay, NOT an LCD command. See BOARD_INTEGRATION.md. */
+   Record 1 is a 120 ms delay, NOT an LCD command. See PROVENANCE.md at repo root. */
 static const uint8_t panel_init[21][18] = {
     {0x11,0}, {0x45,120},
     {0x2a,4,0,0,0,0xef}, {0x2b,4,0,0x28,1,0x17},

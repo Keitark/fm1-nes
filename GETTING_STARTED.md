@@ -121,12 +121,15 @@ manifest intentionally does not claim a flashable, hardware-qualified release.
 
 ### Installation boundary: do not skip this
 
-This source repository does **not** include the full-image packager, stock
-boot/configuration regions, recovery blobs or PC-side writer used during
-private development. It therefore does not provide a turnkey installation
-command. Before a physical test, supply and verify those missing pieces for
-your exact target. If you only have this export, stop at the linked/audited
-application rather than guessing how to write it.
+This repository now includes an application-only packager, bounded sparse
+planner and wrapper for the existing guarded `jluboottool.py`; see
+[APP_UPDATES.md](APP_UPDATES.md). It does not include stock boot/configuration
+regions, RAM-loader binaries or recovery blobs. The external tool and your own
+verified backup remain prerequisites. The new wrapper has offline tests but
+has not independently completed its full hardware command sequence. The
+packager/planner with the existing private writer was tested on V14 on
+2026-10-03; see README.md and VALIDATION.md for exact results and remaining
+gates. Do not treat this as a turnkey recovery guarantee.
 
 An application payload, a complete flash image, a vendor update package and an
 NES `.nes` cartridge are different artifacts. Never write the application over
@@ -175,7 +178,7 @@ Reuse the existing board-support work in small increments:
 | --- | --- | --- |
 | USB and boot entry | `firmware/usb-diag/app_main.c`, `protocol.c`, `rx_channel.c`, `boot_entry.c` | Responsive commands and repeatable download-mode entry |
 | Startup and power | `firmware/nes/boot/board.c`, `board_power.c`, `boot_compat.c` | Reliable normal boot and preserved USB diagnostics |
-| LCD/backlight | `firmware/nes/boot/display_test.c`, `firmware/nes/src/fm1_lcd_pack.c` | Backlight, full window, orientation and known color patterns |
+| LCD / board enable sequence | `firmware/nes/boot/display_test.c`, `firmware/nes/src/fm1_lcd_pack.c` | Illumination, full window, orientation and known color patterns; PA2's electrical role is not independently established |
 | Audio | `firmware/usb-diag/peripherals.c`, `firmware/nes/src/fm1_audio_queue.c` | Known test tone at low listening level, then continuous playback |
 | Keys/knobs/volume | `firmware/nes/src/fm1_wl82_keyscan.c`, `fm1_stock_keys.c`, `fm1_volume.c`, `firmware/usb-diag/peripherals.c` | Each control individually, held-key behavior and continued serial response |
 
@@ -206,6 +209,13 @@ When replacing NES with your application, preserve CDC and boot entry. Use
 bounded peripheral waits, deliberate buffer ownership and small ISR workloads;
 test inputs, display and audio under concurrent load. Make one change per
 build/test cycle and record what was observed versus inferred.
+
+For the chip-facing implementation, use the official SDK documentation and
+the distinctions in [PROVENANCE.md](PROVENANCE.md). The existing stock-style
+LCD sequence drives PA2 low; this is not proof that PA2 is a dedicated backlight
+pin. The retained LCD table is stock-derived, not newly attributed to the SDK.
+Publication and binary-distribution decisions are tracked in
+[PUBLICATION.md](PUBLICATION.md).
 
 ## MIDI and SysEx: an unverified development path
 
@@ -254,6 +264,7 @@ Do not describe a linked application as a complete installable flash image.
 
 Deliver a small staged plan, source changes, offline tests and a bench checklist.
 Clearly separate confirmed facts, community reports and hypotheses. Report the
-missing packaging/writer/recovery pieces rather than inventing a flash command.
+remaining hardware/recovery gates. Read APP_UPDATES.md for the application-only
+packager and existing-jltool wrapper; keep all device-derived plans private.
 Perform no device operations until I explicitly authorize that phase.
 ```
