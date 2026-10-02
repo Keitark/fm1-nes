@@ -41,6 +41,14 @@ class ReleaseTests(unittest.TestCase):
             with self.subTest(name=name), self.assertRaises(ValueError):
                 release.validate_name(name)
 
+    def test_homebrew_source_extensions_not_generated_assets(self):
+        for name in ('examples/fablenes/src/main_nrom.s', 'examples/fablenes/nes_nrom.cfg'):
+            release.validate_name(name)
+        for name in ('examples/fablenes/game.nes', 'examples/fablenes/art.bin',
+                     'examples/fablenes/tool.exe', 'examples/fablenes/build/generated.py'):
+            with self.assertRaises(ValueError):
+                release.validate_name(name)
+
     def test_rejects_binary_and_credentials(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder); self.fixture(root)

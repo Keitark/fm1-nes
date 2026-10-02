@@ -1,5 +1,22 @@
 # Source-release validation
 
+## Optional original NROM game — 2026-10-03
+
+- Maintainer identified and authorized the Claude Code-assisted game's original
+  NROM source/asset generators under Apache-2.0. Only optional source is added;
+  no compiler, emulator, compiled ROM or FM-1 binary is tracked.
+- Existing Python and externally supplied ca65/ld65 rebuilt the NROM cartridge:
+  40976 bytes, mapper0, 32KiB PRG/8KiB CHR ROM, SHA256
+  `8dbe33a3f00d76d88c4618917833f3a9dbb198b2de3ee684a4c59a2cc4bdc687`,
+  identical to the original local file. Original project sources were unchanged.
+- FM-1 composite application/static audit/package passed:217680 bytes, SHA256
+  `c0c3422aac8b27115d6bfd08ac3c23b17452e926219a2712e257fbc1347cf8d3`.
+  **13/13** linked-image/corruption tests and **50/50** source/config tests passed.
+  Source inventory is160 files, still excluding all generated outputs/plans.
+- Sparse plan from the previously verified private V14-backed image needs12
+  changed sectors, directory last. Physical test results are recorded separately;
+  offline format/build checks are not gameplay or audio acceptance.
+
 ## Source-publication refresh — 2026-10-03
 
 - Source/config tests **45/45**, NES host tests **25/25**, USB host tests

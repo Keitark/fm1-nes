@@ -74,6 +74,20 @@ source release; SDK/toolchain/cartridge redistribution boundaries still apply.
 
 ## Hardware research and scope
 
+### Optional maintainer homebrew game
+
+`examples/fablenes/` contains the NROM engine, authored glyph/sprite/music data,
+procedural asset generators and linker configuration from the maintainer's
+Claude Code-assisted “ぼくがかんがえたさいきょうのファミコンゲーム”. On
+2026-10-03 the maintainer identified it as their own and explicitly authorized
+its original source and generated game assets under Apache-2.0. That report and
+grant are recorded, not an exhaustive independent asset-authorship certification.
+Imported original game logic/data are unchanged except for publication headers;
+the optional Python build wrapper is a new source-only integration convenience.
+cc65 is an external prerequisite with its own terms, not redistributed here.
+No compiled ROM, emulator or compiler is included. This does not relicense the
+GPLv3 USB port, SDK-linked FM-1 firmware or any unidentified third-party content.
+
 Board-specific register values, LCD initialization data, key decoding and power
 parameters were recovered through investigation of the FM-1's behavior/firmware.
 In particular, the two `panel_init` arrays retain a 21-record table recovered

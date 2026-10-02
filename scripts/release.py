@@ -9,7 +9,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 FORBIDDEN_PARTS = {'build', 'dist', '.deps', '.git', 'local', 'tmp',
                    'private-backups', '__pycache__', 'generated'}
-ALLOWED_EXTENSIONS = {'.c', '.h', '.S', '.py', '.md', '.txt'}
+ALLOWED_EXTENSIONS = {'.c', '.h', '.S', '.s', '.cfg', '.py', '.md', '.txt'}
 SPECIAL_FILES = {'.gitignore', 'LICENSE', '.github/workflows/source-release.yml'}
 # Patterns are intentionally split so the scanner source does not match itself.
 PATTERNS = (

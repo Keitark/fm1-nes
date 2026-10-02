@@ -52,6 +52,10 @@ offline package/plan and explicit load/backup/flash/reset commands.
 Read the [ROM guide](ROM_GUIDE.md) to build the original diagnostic or select
 your own compatible homebrew cartridge. A `.nes` cartridge is embedded in
 `app.bin`; it is **not** itself an FM-1 firmware image or a separate flash slot.
+The maintainer's Claude Code-assisted
+[ぼくがかんがえたさいきょうのファミコンゲーム](examples/fablenes/README.md)
+is supplied as an optional Apache-2.0 **NROM source example**, including source
+asset generators. Build the game locally; no compiled ROM/toolchain is bundled.
 
 ## Research and attribution
 
