@@ -16,6 +16,17 @@
 - Sparse plan from the previously verified private V14-backed image needs12
   changed sectors, directory last. Physical test results are recorded separately;
   offline format/build checks are not gameplay or audio acceptance.
+- User-authorized existing-writer deployment verified those12 sectors and one
+  complete final readback, preserving boot/config/reserved regions. Serial UBOOT
+  entry succeeded. The later reset request was refused before sending a command
+  because no UBOOT disk was present; no reset/reflash was retried. Actual normal
+  USB CDC observation then verified advancing frames4058..4841, zero reported
+  faults/underruns and valid volume telemetry. The cause of the intervening mode
+  change was not established. The private broker's unconsumed reset permit leaves
+  its safety latch intact; no protected state was manually cleared.
+- The NROM source contains five stage/boss/music/scroll tables and loops from
+  stage5 to1. This confirms included logic, not all-five-stage physical gameplay.
+  User screen/input/listening and sustained-duplex acceptance remain pending.
 
 ## Source-publication refresh — 2026-10-03
 
