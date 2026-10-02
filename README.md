@@ -12,7 +12,46 @@ instruments, effects and other applications—not to turn the FM-1 into an NES b
 The NES player is an example that exercises the display, audio, keys, knobs and
 real-time scheduling together. Use it as a reference, or replace it with your own
 application. This is an independent, experimental project, not an official
-M-VAVE or Jieli release. No game ROM or stock firmware is included.
+M-VAVE or Jieli release. No commercial game ROM or stock firmware is included.
+
+## Application-only programming: tested on V14
+
+**Build the complete application; update only its changed flash sectors.**
+The `.fm1app` package contains exactly `app.bin` and `manifest.json`, **not the
+stock bootloader**. Keep the working bootloader already installed on your FM-1.
+The source export neither rebuilds nor distributes that loader.
+
+| Address / artifact | Meaning |
+| --- | --- |
+| Physical flash `0x0000..0x3FFF` | Existing boot/header/config; preserved, never written by this scheme |
+| Physical flash `0x4000`, record `0x4020` | Application directory/header; required size/CRC metadata updated |
+| Physical flash **`0x4120`** | Start of the installed application payload, after the `0x120`-byte directory prefix |
+| CPU address **`0x02000120`** | Application entry address; **not** a flash write offset |
+| `.fm1app` | Application and sanitized manifest only |
+| Owner backup / sector plan | Private unit-derived data; never publish these |
+
+Do **not** issue a raw write of `app.bin` at `0x4120`: the planner must validate
+the installed layout, encode the application, update metadata and preserve
+shared erase-sector bytes. Only reviewed layouts/boot hashes are accepted;
+the version label alone does not establish compatibility.
+
+On **2026-10-03**, the app-only scheme was tested on the maintainer's FM-1
+with an installed **V14** baseline: **51 changed 4 KiB sectors**, directory last,
+and **one complete final readback** matched. Bootloader/configuration/reserved
+regions were preserved. Serial UBOOT entry, reset, normal USB CDC plus both
+audio endpoints, advancing NES frames and changing volume telemetry were
+observed, with zero reported faults/underruns during that observation.
+This used the existing private elevated Jieli writer with the public
+packager/planner; the standalone public wrapper's full hardware command sequence
+has **not** independently been bench-qualified. Physical screen/BGM/controls and
+sustained duplex audio remain separate acceptance checks. No compatibility
+claim is made for every FM-1 revision. See [VALIDATION.md](VALIDATION.md).
+
+Start with [APP_UPDATES.md](APP_UPDATES.md) for the existing-tool guard patch,
+offline package/plan and explicit load/backup/flash/reset commands.
+Read the [ROM guide](ROM_GUIDE.md) to build the original diagnostic or select
+your own compatible homebrew cartridge. A `.nes` cartridge is embedded in
+`app.bin`; it is **not** itself an FM-1 firmware image or a separate flash slot.
 
 ## Research and attribution
 
@@ -27,7 +66,8 @@ attribution. The project license applies only to material we have the right to
 license. See [THIRD_PARTY.md](THIRD_PARTY.md), the focused
 [source-reference map](PROVENANCE.md), and the
 [publication checklist](PUBLICATION.md). Technical checks do not establish
-redistribution rights, and this preparation does not authorize a public release.
+redistribution rights. Source-only publication is the maintainer's decision;
+it is not legal clearance or authorization to redistribute generated binaries.
 
 **New to FM-1 development? Start with the [custom-firmware starting guide](GETTING_STARTED.md).**
 It includes a minimal USB-only build, bring-up checkpoints and a copyable prompt
@@ -125,8 +165,9 @@ The CDC command path is in [protocol.c](firmware/usb-diag/protocol.c),
 
 This two-step confirmation is part of our custom firmware, not a command claimed
 to exist in the stock firmware. Recheck the transition on your exact build and
-device. The source export's diagnostic artifact remains unflashed/unqualified;
-see [VALIDATION.md](VALIDATION.md).
+device. The V14 composite application passed this transition in the test above;
+the separate USB-only first-milestone artifact remains hardware-unqualified.
+See [VALIDATION.md](VALIDATION.md).
 
 ### What about SysEx uploads?
 
@@ -194,9 +235,11 @@ ignored `.deps/` directories. It never replaces an existing checkout. Upstream
 availability and a fresh network clone were not tested for this release; builds
 were verified against existing clean checkouts at the stated revisions.
 
-The default firmware build generates an original checkerboard/pulse/controller
-diagnostic ROM from source. It needs neither a commercial ROM nor a stock dump.
-Build outputs go under ignored `build/`.
+On a fresh checkout the default firmware build generates an original
+checkerboard/pulse/controller diagnostic ROM from source. It needs neither a
+commercial ROM nor a stock dump. An optional ignored `local/rom.json` can select
+your own persistent cartridge default; `--diagnostic` explicitly ignores it.
+Build outputs go under ignored `build/`. See [ROM_GUIDE.md](ROM_GUIDE.md).
 
 To embed your own lawfully obtained ROM instead:
 
@@ -233,15 +276,17 @@ binaries, recovery blobs or an elevation server.
 
 **Do not write the application binary directly over the full flash.** Hardware
 operations require an explicit wrapper subcommand; package/plan/build commands
-do not contact the device. The new wrapper and diagnostic application have not
-been hardware-qualified. Existing private recovery/flash workflows are unchanged.
+do not contact the device. The V14 app-only scheme was tested using the existing
+private writer; the standalone wrapper is offline-tested, not independently
+hardware-qualified. Existing private recovery/flash workflows are unchanged.
 Firmware CDC boot-entry support remains in source.
 
 Optional **USB audio plus serial**, reused from the MDX karaoke work, is
 available with `--usb-audio`. See [USB_AUDIO.md](USB_AUDIO.md) for PC playback,
 NES capture, volume ownership, build/package commands and the unchanged
-app-only Jieli programming method. This port is offline-validated, not yet
-hardware-qualified. Imported GPLv3 code means the combined current firmware
+app-only Jieli programming method. V14 startup/USB/telemetry observations are
+recorded above; sustained audio acceptance remains pending. Imported GPLv3 code
+means the combined current firmware
 examples are not Apache-only binaries.
 
 ## Source-only release

@@ -126,7 +126,10 @@ planner and wrapper for the existing guarded `jluboottool.py`; see
 [APP_UPDATES.md](APP_UPDATES.md). It does not include stock boot/configuration
 regions, RAM-loader binaries or recovery blobs. The external tool and your own
 verified backup remain prerequisites. The new wrapper has offline tests but
-has not been bench-qualified; do not treat it as a turnkey recovery guarantee.
+has not independently completed its full hardware command sequence. The
+packager/planner with the existing private writer was tested on V14 on
+2026-10-03; see README.md and VALIDATION.md for exact results and remaining
+gates. Do not treat this as a turnkey recovery guarantee.
 
 An application payload, a complete flash image, a vendor update package and an
 NES `.nes` cartridge are different artifacts. Never write the application over

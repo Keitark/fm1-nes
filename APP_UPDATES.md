@@ -5,6 +5,16 @@ wrapper is offline/synthetic-tested, **not hardware-qualified**. Existing privat
 flashing tools and rollback artifacts are unchanged. No new Python environment,
 USB writer, dependency installer or elevation server is created.
 
+**V14 bench result (2026-10-03):** the public packager/planner plus the existing
+private elevated Jieli writer installed an audited application in 51 changed
+sectors, verified one complete final readback, preserved boot/config/reserved
+bytes, then reset into live composite USB/CDC. Serial UBOOT entry worked.
+This qualifies that bounded programming experiment, **not** every standalone
+wrapper command or every firmware revision. The wrapper below additionally
+performs a fresh preflight read; the established bench broker reused its verified
+baseline instead. Do not describe these host orchestration paths as identical.
+See [VALIDATION.md](VALIDATION.md) for remaining physical acceptance gates.
+
 ## Package and preserved layout
 
 `scripts/app_package.py` creates a deterministic `.fm1app` ZIP with exactly
@@ -27,6 +37,13 @@ reviewed 010/V14 layouts (583228/584956-byte allocations) and existing bootloade
 code hash are accepted. Capacity comes from the preserved config boundary, so a
 small installed application can later be replaced with a larger one. Unexpected
 layout/bootloader is a stop condition; do not force an update.
+
+`app.bin` byte zero maps to physical flash **`0x4120`**, after validated encoding,
+not to `0x0000` or `0x4000`. Application-relative offset `0x120` is relative to
+the application area at `0x4000`. CPU addresses are a third address space.
+The file must go through this planner, not a bare `write 0x4120 app.bin`.
+The application can link SDK runtime/RTOS libraries; it does not contain a
+copied stock bootloader. A full linked app build and sparse flashing are distinct.
 
 ## Offline package and plan
 
@@ -131,3 +148,8 @@ python scripts/jltool_update.py reset --jltool .deps/jl-uboot-tool --device \\.\
 
 A completed reset or USB disconnect is not boot verification. Test screen,
 audio, controls and serial UBOOT entry separately on the bench.
+
+The existing CLI can report a CP932/UTF-8 log-decoding exception after a reset
+already reached the device. An ambiguous reset log is not permission to resend
+reset or rewrite flash: check actual disappearance/re-enumeration and normal
+serial replies first. If normal boot cannot be confirmed, retain recovery state.

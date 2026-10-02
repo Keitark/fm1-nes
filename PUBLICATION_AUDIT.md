@@ -1,5 +1,31 @@
 # Remaining publication audit
 
+## Public-source decision and refreshed checks — 2026-10-03
+
+The maintainer explicitly authorized public visibility after checks, with the
+retained stock-derived board material and mixed licenses disclosed. This is a
+publication decision, not legal sign-off, clean-room certification or permission
+to distribute SDK-linked binaries/commercial ROMs. See PUBLICATION.md.
+
+The V14 app-only experiment is recorded in VALIDATION.md and README.md. No
+installed stock bootloader, full NOR candidate, vendor RAM helper or private
+sector plan is distributed. The public wrapper's complete hardware sequence
+remains independently unqualified; the test used the established private writer.
+
+Refreshed available hosted surfaces before the publication documentation push:
+six advertised branches, zero tags, five PRs, twelve issue/PR records, six
+conversation comments and twelve Actions runs. All available completed run logs
+were checked with the limited source scanner. No configured secret-pattern hit
+or attachment link; no reviews/inline/commit comments, releases/artifacts,
+deployments or forks. Wiki, Pages and Discussions remain disabled. Advertised
+PR heads and available merge refs were fetched for the history scan. New
+publication PR/CI surfaces are checked again before visibility changes.
+
+Source/config tests passed 45/45, NES host tests 25/25 and USB host tests 36/36
+with the existing dependencies/environment. No device operation or new writer
+was needed for this documentation/publication task. These checks have bounded
+pattern/available-surface coverage, not universal disclosure or rights guarantees.
+
 ## Application-update tooling follow-up — 2026-10-02
 
 The application-only packager, bounded sparse planner and existing-jltool wrapper
@@ -157,6 +183,7 @@ a reduced/reimplemented release. That decision concerns the LCD table, boot ABI,
 board-specific findings and SDK-derived audit templates; it cannot be made by
 a secret scanner or by deleting their history.
 
-Keep the repository private until that decision and separate visibility approval.
+The source-publication decision and separate visibility approval were received
+on 2026-10-03 as recorded at the top; earlier dated statements remain historical.
 Binary redistribution, USB identity and hardware qualification remain future
 product gates, not completed checks for this source-only candidate.

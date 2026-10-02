@@ -1,19 +1,23 @@
 # Source publication checklist
 
-This branch prepares a source-only candidate. It does not authorize changing
-repository visibility or claim legal clearance. Keep the repository private
-until the maintainer resolves the source-publication decisions below.
+This is a source-only publication checklist, not legal clearance. On
+2026-10-03 the maintainer explicitly requested **"Make it public after the checks
+pass"**, after being told that this exposes history/discussions, retained
+stock-derived board data and mixed licenses, but no firmware/game binaries.
+That is the source-publication decision; binary/product rights and acceptance
+remain separate. Preserve truthful provenance rather than claiming clean-room
+development or erasing evidence.
 
 ## Before making the repository public
 
-- [ ] Review the added GPLv3 MDX USB/packet port and combined firmware license
+- [x] Review the added GPLv3 MDX USB/packet port and combined firmware license
   boundary in THIRD_PARTY.md. Source-only preparation is not an Apache-only
   license claim or permission to distribute SDK-linked binaries.
 
 - [x] Complete the bounded source-reference and publication-surface review.
   See PROVENANCE.md, LCD_PROVENANCE.md and PUBLICATION_AUDIT.md. The review
   distinguishes documented interfaces from retained board-specific findings.
-- [ ] Record the maintainer's publication decision for retained LCD/boot/board
+- [x] Record the maintainer's publication decision for retained LCD/boot/board
   material and the SDK-derived instruction templates in host audit scripts.
   Where rights remain unclear, obtain permission, seek applicable legal advice,
   or exclude/reimplement the affected portion from an appropriately reviewed
@@ -37,15 +41,16 @@ until the maintainer resolves the source-publication decisions below.
   wiki/Pages/Discussions settings. The dated snapshot and limits are recorded in
   PUBLICATION_AUDIT.md. Refresh changed surfaces before publication; the local
   Git scanner alone does not cover them. Private evidence stays untracked.
-- [ ] Confirm the exact visibility change separately. Do not automate publication
-  merely because tests pass or an archive exists.
+- [x] Confirm the exact visibility change separately: the 2026-10-03 instruction
+  above explicitly authorizes public visibility after checks. Tests or archive
+  existence alone do not provide that authorization.
 
 No legal sign-off is recorded by this checklist. Detailed review evidence can
 remain private; retain truthful public attribution and required notices.
 Do not erase development evidence or claim clean-room development retroactively.
 
 The bounded LCD comparison is complete in [LCD_PROVENANCE.md](LCD_PROVENANCE.md):
-all 21 records are mapped, but the publication decision is still open. Ten SDK
+all 21 records are mapped; source publication was authorized as recorded above. Ten SDK
 matches corroborate individual values; they do not change the existing origin.
 
 ## Repeatable technical checks

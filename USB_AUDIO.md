@@ -2,8 +2,9 @@
 
 The optional `--usb-audio` profile reuses generic USB code from the MDX karaoke
 work at `41410578152eec195b534b3acfe2fa1b10e7476e`. It does not include its
-MDX player, songs or stock firmware. This port has offline tests; physical USB
-enumeration, simultaneous audio/CDC and recovery still need bench acceptance.
+MDX player, songs or stock firmware. Offline tests and a V14 startup/USB/serial
+UBOOT experiment have passed; sustained simultaneous audio/CDC, physical audio
+and recovery coverage still need bench acceptance. See VALIDATION.md.
 
 ## Functions on one cable
 
@@ -119,10 +120,18 @@ That confirms startup/liveness, not sustained duplex audio or physical volume
 acceptance. Windows may retain the old MDX endpoint display name for this shared
 bench VID/PID; the bus-reported product is `FM1 NES USB Audio`.
 
+The subsequent 2026-10-03 private cartridge build was installed on the V14
+baseline through 51 changed sectors and one complete final readback, with
+boot/config/reserved preservation. Serial UBOOT entry and post-reset advancing
+frames were observed. Volume ADC/target/gain changed with valid readings and
+zero reported errors. These are telemetry observations, not a listening test
+or qualification of the standalone public wrapper's hardware command sequence.
+
 ## License boundary
 
 Imported USB/packet/audit/test code retains GPLv3 and attribution; original
 Apache source keeps its notices. Both current profiles link the reused GPLv3
 packet helper, so their combined binaries are not Apache-only or MIT. See
 THIRD_PARTY.md and `licenses/fm1-mdx-GPL-3.0.txt`. SDK/cartridge terms remain
-applicable. This change does not authorize making the repository public.
+applicable. Source-only publication is a separate maintainer decision recorded
+in PUBLICATION.md, not binary redistribution clearance.
