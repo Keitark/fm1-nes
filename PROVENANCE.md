@@ -1,5 +1,10 @@
 # Source references and research boundaries
 
+The generic USB audio/packet port added on 2026-10-02 reuses MDX karaoke source
+at `41410578152eec195b534b3acfe2fa1b10e7476e`, not a stock binary. Its GPLv3
+license and attribution are preserved; see USB_AUDIO.md and THIRD_PARTY.md.
+No MDX songs/player code or loader blob was transferred.
+
 This is a focused engineering inventory, not a clean-room claim, an exhaustive
 authorship audit or a legal opinion. It preserves the known development history.
 Public documentation found later can corroborate a fact without changing where

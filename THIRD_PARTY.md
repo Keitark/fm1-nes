@@ -54,6 +54,24 @@ wrappers. No complete SDK library or executable patch is included, but these
 SDK-derived reference sequences are part of the source review. See
 PUBLICATION_AUDIT.md for their origin and the separate linked-library boundary.
 
+## MDX USB port added 2026-10-02
+
+Generic USB audio bridge/profile/target, atomic packet submission, packet audit
+and tests are reused/adapted from `Keitark/fm1-mdx` at
+`41410578152eec195b534b3acfe2fa1b10e7476e`. Its root LICENSE is GPLv3; imported
+files are conservatively marked **GPL-3.0-only**, not Apache or MIT. The complete
+license is `licenses/fm1-mdx-GPL-3.0.txt`. MDX-derived CDC overlay, task/session
+and composite descriptor/setup-policy portions have those terms too; original notices remain.
+No MDX/YM2151/sequencer code, songs, recordings or proprietary firmware are
+included by this port.
+
+Both current CDC-only and composite firmware link the reused packet helper.
+Their combined binaries must not be described as Apache-only or MIT; GPLv3
+and retained Apache/dependency notices apply. Imported host audit/tests retain
+their license. The root Apache license remains for the material it covers,
+not a relabeling of imported code. Generated binaries are excluded from this
+source release; SDK/toolchain/cartridge redistribution boundaries still apply.
+
 ## Hardware research and scope
 
 Board-specific register values, LCD initialization data, key decoding and power

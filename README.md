@@ -2,7 +2,7 @@
 
 [![Status: experimental](https://img.shields.io/badge/status-experimental-orange)](#verification-status)
 [![MIDI: hardware unverified](https://img.shields.io/badge/MIDI-hardware%20unverified-orange)](#verification-status)
-[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+[![Licenses: mixed](https://img.shields.io/badge/licenses-Apache--2.0%20%2B%20GPLv3-blue)](THIRD_PARTY.md)
 
 This repository shares resources, board-support code and a worked example of
 **how to develop custom firmware for the FM-1**, based on the Jieli WL82. The
@@ -236,6 +236,13 @@ operations require an explicit wrapper subcommand; package/plan/build commands
 do not contact the device. The new wrapper and diagnostic application have not
 been hardware-qualified. Existing private recovery/flash workflows are unchanged.
 Firmware CDC boot-entry support remains in source.
+
+Optional **USB audio plus serial**, reused from the MDX karaoke work, is
+available with `--usb-audio`. See [USB_AUDIO.md](USB_AUDIO.md) for PC playback,
+NES capture, volume ownership, build/package commands and the unchanged
+app-only Jieli programming method. This port is offline-validated, not yet
+hardware-qualified. Imported GPLv3 code means the combined current firmware
+examples are not Apache-only binaries.
 
 ## Source-only release
 

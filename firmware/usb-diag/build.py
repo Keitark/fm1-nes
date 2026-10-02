@@ -1,4 +1,4 @@
-"""Offline WL82 USB-only diagnostic link; no packaging, flashing or UAC."""
+"""Offline WL82 diagnostic/application link; optional UAC, no packaging or flashing."""
 import argparse
 import hashlib
 import json
@@ -21,6 +21,7 @@ def main():
                    help='Only USB0 has a reviewed link contract; connector routing is still unverified')
     p.add_argument('--out',type=Path,required=True)
     p.add_argument('--peripheral-tests',action='store_true')
+    p.add_argument('--usb-audio',action='store_true',help='MDX-derived UAC1 duplex with CDC; requires NES audio priority')
     p.add_argument('--nes-player','--nes-smb1',dest='nes_smb1',action='store_true',help='Autostart a caller-supplied iNES ROM; legacy profile name retained internally')
     p.add_argument('--rom',type=Path,help='Local ROM to embed; never downloaded')
     p.add_argument('--rom-sha256',help='Required expected SHA256 for --rom')
@@ -46,6 +47,7 @@ def main():
     p.add_argument('--lcd-stock-dma',action='store_true',help='Stock setup-before-delay, DMA parameters, fixed register snapshots; requires --lcd-stock-fill')
     p.add_argument('--lcd-stock-sequence',action='store_true',help='Stock PA2/GPIO setup, scheduler delays and 40-byte DMA black first fill; requires --lcd-stock-dma')
     a=p.parse_args(); out=a.out.resolve(); out.mkdir(parents=True,exist_ok=True)
+    if a.usb_audio and not (a.nes_audio_priority and a.nes_volume):p.error('--usb-audio requires --nes-audio-priority and --nes-volume')
     if a.nes_smb1 and (not a.rom or not a.rom_sha256):p.error('NES player requires --rom and --rom-sha256')
     if a.rom and not a.nes_smb1:p.error('--rom requires --nes-player')
     if a.nes_smb1:select_rom(a.rom,a.rom_sha256)
@@ -89,6 +91,7 @@ def main():
            'stock_dump_rechecked':False,'compiled_power_audit_required':True}
     text=MAKE.read_text(encoding='utf-8');flags=make_list(text,'CFLAGS')
     defines=make_list(text,'DEFINES')+['-DFM1_USB_CONTROLLER='+str(a.controller)]
+    if a.usb_audio:defines+=['-DFM1_USB_AUDIO=1']
     if a.peripheral_tests:defines+=['-DFM1_PERIPHERAL_TESTS=1']
     if a.lcd_stock_fill:defines+=['-DFM1_LCD_STOCK_FILL=1']
     if a.lcd_stock_dma:defines+=['-DFM1_LCD_STOCK_DMA=1']
@@ -112,14 +115,18 @@ def main():
     if a.nes_input_recovery:defines+=['-DFM1_NES_INPUT_RECOVERY=1']
     includes=['-I'+str(x) for x in (HERE,NES/'boot',NES/'include',SDK/'apps/common',SDK/'apps/common/usb',SDK/'apps/common/usb/device')]
     includes+=['-I'+str(sdk_path(x[2:])) for x in make_list(text,'INCLUDES')]
+    if a.usb_audio:includes+=['-I'+str(HERE.parent/'usb-audio')]
     sources=[sdk_path(x) for name in ('c_SRC_FILES','S_SRC_FILES') for x in make_list(text,name)]
     sources=[s for s in sources if s.name not in ('app_main.c','board.c','cpp_run_init.c')]
     sources += [NES/'boot'/n for n in ('board.c','boot_compat.c','boot_trace.c','board_power.c')]
-    sources += [HERE/n for n in ('app_main.c','protocol.c','descriptors.c','usb_policy.c','dma.c','rx_channel.c','boot_entry.c')]
+    sources += [HERE/n for n in ('app_main.c','protocol.c','descriptors.c','usb_policy.c','dma.c','rx_channel.c','boot_entry.c','packet.c')]
     if a.peripheral_tests:
         sources += [HERE/n for n in ('peripherals.c','peripheral_logic.c')]
         sources += [NES/'boot/display_test.c',NES/'src/fm1_wl82_keyscan.c',NES/'src/fm1_stock_keys.c']
     speed_sources=set()
+    if a.usb_audio:
+        audio_sources=[HERE.parent/'usb-audio'/n for n in ('bridge.c','profile.c','target.c')]
+        sources+=audio_sources;speed_sources.update(audio_sources)
     if a.nes_smb1:
         core=CORE
         if run(['git','-C',core,'rev-parse','HEAD']).strip()!='68bdfc8de570264c0e84f73766f1a1ed3591066f':raise ValueError('NES core pin changed')
@@ -129,7 +136,7 @@ def main():
         sources += [NES/'src'/n for n in ('fm1_nes.c','fm1_nes_target.c','fm1_board.c','fm1_audio_queue.c')]
         sources += [core/'src'/n for n in ('nes.c','nes_cpu.c','nes_ppu.c','nes_apu.c')]+[generated]
         # Optimize emulation/conversion for speed, retaining SDK/boot flags.
-        speed_sources={NES/'src'/n for n in ('fm1_nes.c','fm1_board.c','fm1_audio_queue.c')}
+        speed_sources.update(NES/'src'/n for n in ('fm1_nes.c','fm1_board.c','fm1_audio_queue.c'))
         speed_sources.update(core/'src'/n for n in ('nes.c','nes_cpu.c','nes_ppu.c','nes_apu.c'))
         if a.nes_volume:
             sources += [NES/'src/fm1_volume.c']
@@ -172,6 +179,7 @@ def main():
     used=out/'sdk.used';used.write_text(used.read_text()+'\nmemory_init\nfm1_usb_task\ncdc_read_data\ncdc_write_data\nfm1_cdc_ready\nfm1_diag_feed\nfm1_usb_device_descriptor\nfm1_usb_config_descriptor\n')
     used.write_text(used.read_text()+'fm1_usb_rx_irq\ngo_mask_usb_updata\nnvram_set_boot_state\n')
     if a.nes_smb1:used.write_text(used.read_text()+'fm1_board_run\nfm1_display_write\nfm1_audio_startup_process24\nfm1_nes_run\n')
+    if a.usb_audio:used.write_text(used.read_text()+'fm1_usb_audio_dac\nfm1_usb_audio_stop\nfm1_uac_desc_config\nfm1_uac_descriptor\n')
     ld=(out/'sdk.ld').read_text()
     for old,new in (('*(.data)','*(.data .data.*)'),('*(.bss)','*(.bss .bss.*)')):
         ld=vendor_overlay.once(ld,old,new)
@@ -199,12 +207,13 @@ def main():
     app=out/'fm1-usb-diag.app.bin';app.write_bytes(b''.join(parts))
     (out/'symbols.txt').write_text(run([TC/'llvm-nm.exe','-n','-S',elf]))
     (out/'disassembly.asm').write_text(run([TC/'llvm-objdump.exe','-d','-mcpu=r3',elf]))
-    report=audit(elf.read_bytes(),app.read_bytes(),usb_only=True,usb_peripheral_tests=a.peripheral_tests,usb_nes=a.nes_smb1,rom='smb1' if a.nes_smb1 else 'rom50',require_boot_trace=True,require_board_power=True)
+    report=audit(elf.read_bytes(),app.read_bytes(),usb_only=True,usb_peripheral_tests=a.peripheral_tests,usb_nes=a.nes_smb1,usb_audio=a.usb_audio,rom='smb1' if a.nes_smb1 else 'rom50',require_boot_trace=True,require_board_power=True)
     (out/'static-audit.json').write_text(json.dumps(report,indent=2)+'\n')
     result={'status':'LINKED_USB_DIAGNOSTIC_UNTESTED','flashable':False,'usb_controller_candidate':a.controller,
             'controller_routing_verified':False,'sdk_commit':SDK_PIN,'application_bytes':app.stat().st_size,
             'application_sha256':hashlib.sha256(app.read_bytes()).hexdigest(),
-            'update_transport':'CDC verify-only; not stored or installed','flash_commit':'BLOCKED_STOCK_LAYOUT_UNQUALIFIED',
+            'update_transport':'CDC UBOOT entry; external app-only jltool wrapper; CDC payload verify-only',
+            'flash_commit':'external explicit approval only','usb_audio':a.usb_audio,
             'device_operations_performed':False,'static_audit':report,'power_evidence':power,
             'peripheral_tests':a.peripheral_tests,'serial_uboot':'implemented; transition not hardware-qualified',
             'nes_smb1':a.nes_smb1,'cartridge_sha256':ROMS['smb1'][2] if a.nes_smb1 else None,
@@ -231,7 +240,7 @@ def main():
             'lcd_test':'stock-pa2-gpio-dma40-sequence' if a.lcd_stock_sequence else ('stock-dma-params-registers' if a.lcd_stock_dma else ('stock-window-continuous-white' if a.lcd_stock_fill else 'row-addressed-rgb')),
             'vendor_overlay_sources':overlays,
             'source_sha256':{str(s):hashlib.sha256(s.read_bytes()).hexdigest() for s in sources+list(HERE.glob('*.h'))+list(HERE.glob('*.py'))+
-                [NES/n for n in ('audit_boot.py','audit_power.py','audit_pre_os.py','build_env.py','embed_rom50.py')]+list((NES/'include').glob('*.h'))+list((NES/'boot').glob('*.h'))},
+                [NES/n for n in ('audit_boot.py','audit_power.py','audit_pre_os.py','audit_usb_packet.py','build_env.py','embed_rom50.py')]+list((NES/'include').glob('*.h'))+list((NES/'boot').glob('*.h'))+(list((HERE.parent/'usb-audio').glob('*.h')) if a.usb_audio else [])},
             'archive_sha256':{str(s):hashlib.sha256(s.read_bytes()).hexdigest() for s in libs}}
     manifest.write_text(json.dumps(result,indent=2)+'\n');log.close()
     print(json.dumps({k:v for k,v in result.items() if k not in ('static_audit','source_sha256','archive_sha256','power_evidence','vendor_overlay_sources')},indent=2))

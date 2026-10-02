@@ -6,6 +6,10 @@ until the maintainer resolves the source-publication decisions below.
 
 ## Before making the repository public
 
+- [ ] Review the added GPLv3 MDX USB/packet port and combined firmware license
+  boundary in THIRD_PARTY.md. Source-only preparation is not an Apache-only
+  license claim or permission to distribute SDK-linked binaries.
+
 - [x] Complete the bounded source-reference and publication-surface review.
   See PROVENANCE.md, LCD_PROVENANCE.md and PUBLICATION_AUDIT.md. The review
   distinguishes documented interfaces from retained board-specific findings.

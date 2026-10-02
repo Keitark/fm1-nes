@@ -4,6 +4,8 @@ Upstream match fragments come from Jieli-Tech AC79 SDK and PeakRacing NES
 (Apache-2.0 at the pinned revisions). Existing upstream notices are retained.
 """
 import re
+# Nonblocking CDC packet and composite registration adaptations below reuse
+# fm1-mdx4141057 (GPL-3.0-only); original overlay terms remain applicable.
 
 def modified_notice(text, origin):
     """Mark generated adaptations, retaining the complete upstream header."""
@@ -246,18 +248,18 @@ def cdc(text):
     if(usb_id!=FM1_USB_CONTROLLER)return 0;
     return fm1_usb_rx_take(buf,len);
 }''')
-    # Bounded task-only mutex wait and no multi-packet/ZLP loop.
-    text=function(text,'cdc_write_data', '''u32 cdc_write_data(const usb_dev usb_id, u8 *buf, u32 len)
+    # MDX-derived atomic packet submission: no SDK TxPktRdy polling or ZLP.
+    text='/* MDX-derived packet adaptation: GPL-3.0-only; original SDK notices retained. */\n#include "packet.h"\n'+text
+    text=function(text,'cdc_write_data', '''u32 fm1_cdc_write_packet(const usb_dev usb_id, u8 *buf, u32 len, unsigned generation)
 {
-    u32 result;
-    if(!cdc_hdl[usb_id] || !len || len>=MAXP_SIZE_CDC_BULKIN ||
+    if(usb_id!=FM1_USB_CONTROLLER || !cdc_hdl[usb_id] || !len || len>=MAXP_SIZE_CDC_BULKIN ||
        (cdc_hdl[usb_id]->bmTransceiver & (BIT(0)|BIT(4)))!=(BIT(0)|BIT(4)) ||
        usb_id2device(usb_id)->bDeviceStates!=USB_CONFIGURED)return 0;
-    if(os_mutex_pend(&cdc_hdl[usb_id]->mutex_data,1))return 0;
-    if(usb_read_txcsr(usb_id,CDC_DATA_EP_IN)&1)result=0;
-    else result=usb_g_bulk_write(usb_id,CDC_DATA_EP_IN,buf,len);
-    os_mutex_post(&cdc_hdl[usb_id]->mutex_data);
-    return result;
+    return fm1_usb_packet_write(usb_id,CDC_DATA_EP_IN,buf,len,&fm1_cdc_generation,generation);
+}
+u32 cdc_write_data(const usb_dev usb_id, u8 *buf, u32 len)
+{
+    return fm1_cdc_write_packet(usb_id,buf,len,fm1_cdc_generation);
 }''')
     # Unused generic echo prints untrusted bytes as a C string: remove it.
     text=re.sub(r'^s32 usb_cdc_output_handler\(void \*priv, u8 \*buf, u32 len\)\n\{.*?^\}',
@@ -276,11 +278,17 @@ int fm1_cdc_ready(usb_dev id) {
 
 def device(text):
     text=modified_notice(text,'Jieli-Tech AC79 SDK (repository license Apache-2.0)')
+    text='/* MDX-derived composite adaptation: GPL-3.0-only; original SDK notices retained. */\n'+text
     # CDC-only: do not pull video/audio/host header trees into this build.
     for name in ('usb/device/msd.h','usb/scsi.h','usb/device/hid.h','usb/device/uac_audio.h',
                  'usb/device/slave_uvc.h','usb/device/printer.h'):
         text=once(text,'#include "'+name+'"\n','')
     text='extern int fm1_cdc_allocated(unsigned char);\n'+text
+    text=once(text,'        cdc_register(usb_id);', '''        cdc_register(usb_id);
+#ifdef FM1_USB_AUDIO
+        extern u32 fm1_uac_desc_config(usb_dev,u8 *,u32 *);
+        usb_add_desc_config(usb_id,class_index++,fm1_uac_desc_config);
+#endif''')
     text=once(text,'static void usb_device_init(const usb_dev usb_id)',
                     'static int usb_device_init(const usb_dev usb_id)')
     text=once(text,'    usb_config(usb_id);', '''    if(usb_config(usb_id))return -1;

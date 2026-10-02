@@ -54,10 +54,9 @@ void fm1_audio_queue_stereo24(fm1_audio_queue *q,int32_t *out,size_t frames) {
         out[i*2]=out[i*2+1]=p;
     }
 }
-void fm1_audio_queue_play24(fm1_audio_queue *q,fm1_audio_startup *s,int32_t out[128]) {
+static void queue_play24(fm1_audio_queue *q,unsigned gain,int32_t out[128]) {
     uint32_t available=q->write_pos-q->read_pos,read=q->read_pos;
     unsigned i,count;
-    startup_step(s); /* Keep the existing wall-clock mute/ramp duration. */
     if(!q->primed) {
         if(available<FM1_AUDIO_PRIME) {
             memset(out,0,128*sizeof(*out));
@@ -72,7 +71,7 @@ void fm1_audio_queue_play24(fm1_audio_queue *q,fm1_audio_startup *s,int32_t out[
         /* (signed16 *256 *gain_q7)/128 = signed16 *2 *gain_q7,
            exactly, including negatives. One multiply and duplicate instead
            of clearing, expanding and then scaling 128 separate words. */
-        int32_t p=(int32_t)q->mono[read++&(FM1_AUDIO_CAPACITY-1)]*(int32_t)(2u*s->gain_q7);
+        int32_t p=(int32_t)q->mono[read++&(FM1_AUDIO_CAPACITY-1)]*(int32_t)(2u*gain);
         out[2*i]=out[2*i+1]=p;
     }
     q->read_pos=read;
@@ -81,4 +80,14 @@ void fm1_audio_queue_play24(fm1_audio_queue *q,fm1_audio_startup *s,int32_t out[
         q->underrun_frames+=64-count;
         ++q->rebuffer_events;q->primed=0;
     }
+}
+void fm1_audio_queue_play24(fm1_audio_queue *q,fm1_audio_startup *s,int32_t out[128]) {
+    startup_step(s); /* Keep the existing wall-clock mute/ramp duration. */
+    queue_play24(q,s->gain_q7,out);
+}
+#ifndef _MSC_VER
+__attribute__((noinline,used))
+#endif
+void fm1_audio_queue_raw24(fm1_audio_queue *q,int32_t out[128]) {
+    queue_play24(q,128,out); /* Capture before the physical master volume. */
 }

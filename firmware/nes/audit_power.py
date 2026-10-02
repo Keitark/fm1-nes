@@ -102,7 +102,7 @@ def call_target(code, address):
     return address + 4 + relative * 2
 
 
-def audit_power(symbols, sections, code_at, required=False, usb_only=False):
+def audit_power(symbols, sections, code_at, required=False, usb_only=False,usb_audio=False):
     def value(name):
         require(name in symbols, 'Missing board power symbol ' + name)
         return symbols[name][0]
@@ -142,20 +142,25 @@ def audit_power(symbols, sections, code_at, required=False, usb_only=False):
     # these three RAM operands, not the power sequence. Validate destinations
     # against their symbols before restoring historical encodings for hashing.
     base=value('ota_status')
+    layout=tuple(value(n)-base for n in ('lrc.0','lrc.6','sys_low_power'))
+    if usb_audio:
+        # NES composite disassembly: LRC224/236, sys_low_power260.
+        # Same SDK initializer; only the ninth store-offset bit changes.
+        require(layout in ((224,236,260),(228,240,264)),'Composite audio power merged-global layout changed')
     for off,target,prefix,regbits,historical in (
         (0x0d6,'lrc.0',b'\x5a\xee',0x10,bytes.fromhex('5a ee 14 04')),
         (0x104,'lrc.6',b'\xd0\xec',0x80,bytes.fromhex('d0 ec 81 05')),
         (0x3c0,'sys_low_power',b'\xd0\xec',0x80,bytes.fromhex('d0 ec 81 36')),
     ):
         delta=value(target)-base
-        require(0<=delta<256 and delta%4==0,'Power merged-global offset outside reviewed encoding')
+        require(0<=delta<(512 if usb_audio else 256) and delta%4==0,'Power merged-global offset outside reviewed encoding')
         require(symbols[target][1]==4,'Power merged-global object size changed')
         if off==0x0d6:
             expected=prefix+bytes([regbits|(delta&15),delta>>4])
             require(value('lrc.1')==value('lrc.0')+4 and value('lrc.2')==value('lrc.0')+8,
                     'Power LRC state layout changed')
         else:
-            expected=prefix+bytes([regbits|1|(delta&15),(delta>>4)|(0x30 if off==0x3c0 else 0)])
+            expected=bytes([prefix[0]|(delta>>8),prefix[1]])+bytes([regbits|1|(delta&15),((delta&255)>>4)|(0x30 if off==0x3c0 else 0)])
         require(code_at(start+off,4)==expected,'Power merged-global target changed: '+target)
         normalized[off:off+4]=historical
     digest = hashlib.sha256(normalized).hexdigest()
@@ -167,10 +172,16 @@ def audit_power(symbols, sections, code_at, required=False, usb_only=False):
                                   '00 00 00 00 52 ee 4c 52 4c ea 02 40 55 04')
     struct.pack_into('<I', expected, 4, phase-48)
     if usb_only:
-        require(phase==value('ota_status')+24,'USB power stage merged-global offset changed')
+        require(phase==value('ota_status')+(28 if usb_audio else 24),'USB power stage merged-global offset changed')
         expected=bytearray.fromhex('75 04 c4 ff 00 00 00 00 50 ee 44 01 80 48 45 21 c5 66 '
                                   '00 00 00 00 52 ee 44 51 46 ea 02 40 55 04')
         struct.pack_into('<I',expected,4,phase-24)
+        if usb_audio:
+            # Reviewed NES composite gateway: guard at base+24, stage at+28;
+            # stores0x2001648/0x2001652. Calls/order remain exactly pinned.
+            expected=bytearray.fromhex('75 04 c4 ff 00 00 00 00 50 ee 48 01 80 48 45 21 c5 67 '
+                                      '00 00 00 00 52 ee 48 51 47 ea 02 40 55 04')
+            struct.pack_into('<I',expected,4,phase-28)
     require(call_target(code_at(gateway+18, 4), gateway+18) == start,
             'Board power gateway bypasses SDK power_init')
     expected[18:22] = code_at(gateway+18, 4)
