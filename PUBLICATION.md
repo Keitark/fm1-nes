@@ -71,8 +71,9 @@ recognize every credential, private datum, or ROM disguised as text.
   distributing firmware binaries, including any statically linked notices.
 - Resolve the inherited USB VID/PID `3654:5155` before product distribution;
   it is a bench identity, not a project allocation or certification.
-- Qualify a complete image, recovery path and hardware behavior separately.
-  The `.app.bin` output is not a complete flash image.
+- Qualify the app-only package/wrapper update, recovery path and hardware behavior
+  separately. A full flash candidate is not required by APP_UPDATES.md, but an
+  application binary alone is not a directly writable update container.
 - The standalone peripheral profile currently fails its static audit with
   `USB trace merged-global offset changed: 240`. Do not bypass this check or
   advertise that profile as qualified. See VALIDATION.md.

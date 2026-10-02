@@ -223,13 +223,19 @@ The ELF, build manifest and `static-audit.json` accompany it. Entry instructions
 memory sections, power-init code, boot compatibility and embedded ROM are checked.
 Audits still fail closed on an unexpected SDK layout or code change.
 
-This source release intentionally omits the stock-image packager, vendor images,
-recovery blobs and all PC-side flash/elevation tools. It does not reproduce or
-distribute the device's bootloader/configuration regions. **Do not write the
-application binary directly over the full flash.** Existing private recovery and
-flash workflows are separate and unchanged. The clean diagnostic build has not
-been flashed or hardware-qualified. Firmware CDC boot-entry support remains in
-source; running a build does not contact the device.
+An application-only packager and wrapper around the existing guarded Jieli
+writer are now provided: see [APP_UPDATES.md](APP_UPDATES.md). Packages contain
+only the caller's audited application and minimal manifest, not full ROMs.
+The offline planner prepares private changed sectors from the owner's backup,
+preserving bootloader, configuration and application placement. The wrapper
+and source-only guard patch do not bundle RAM loaders, vendor images, SDK
+binaries, recovery blobs or an elevation server.
+
+**Do not write the application binary directly over the full flash.** Hardware
+operations require an explicit wrapper subcommand; package/plan/build commands
+do not contact the device. The new wrapper and diagnostic application have not
+been hardware-qualified. Existing private recovery/flash workflows are unchanged.
+Firmware CDC boot-entry support remains in source.
 
 ## Source-only release
 

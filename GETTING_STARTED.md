@@ -121,12 +121,12 @@ manifest intentionally does not claim a flashable, hardware-qualified release.
 
 ### Installation boundary: do not skip this
 
-This source repository does **not** include the full-image packager, stock
-boot/configuration regions, recovery blobs or PC-side writer used during
-private development. It therefore does not provide a turnkey installation
-command. Before a physical test, supply and verify those missing pieces for
-your exact target. If you only have this export, stop at the linked/audited
-application rather than guessing how to write it.
+This repository now includes an application-only packager, bounded sparse
+planner and wrapper for the existing guarded `jluboottool.py`; see
+[APP_UPDATES.md](APP_UPDATES.md). It does not include stock boot/configuration
+regions, RAM-loader binaries or recovery blobs. The external tool and your own
+verified backup remain prerequisites. The new wrapper has offline tests but
+has not been bench-qualified; do not treat it as a turnkey recovery guarantee.
 
 An application payload, a complete flash image, a vendor update package and an
 NES `.nes` cartridge are different artifacts. Never write the application over
@@ -261,6 +261,7 @@ Do not describe a linked application as a complete installable flash image.
 
 Deliver a small staged plan, source changes, offline tests and a bench checklist.
 Clearly separate confirmed facts, community reports and hypotheses. Report the
-missing packaging/writer/recovery pieces rather than inventing a flash command.
+remaining hardware/recovery gates. Read APP_UPDATES.md for the application-only
+packager and existing-jltool wrapper; keep all device-derived plans private.
 Perform no device operations until I explicitly authorize that phase.
 ```

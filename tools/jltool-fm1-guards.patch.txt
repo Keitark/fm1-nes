@@ -1,0 +1,269 @@
+FM-1 modifications to kagaimiq/jl-uboot-tool adb3f18889e88ac512ce0a3c4d8cc3d3cb30696a
+Copyright (c) 2023 Andrey Grigoryev (kagaimiq)
+MIT licensed; retain upstream LICENSE and licenses/kagaimiq-MIT.txt.
+Transferred unchanged from the existing bench tools. No binary loader included.
+Apply only to a separate clean checkout: git apply <absolute-patch-path>
+
+diff --git a/jltech/uboot.py b/jltech/uboot.py
+index dc3a369..f6dc34d 100644
+--- a/jltech/uboot.py
++++ b/jltech/uboot.py
+@@ -7,8 +7,9 @@ import os, time
+ class JL_MSCDevice:
+     """ Class for handling of the JieLi Mass Storage devices """
+ 
+-    def __init__(self, path):
++    def __init__(self, path, strict_identity=None):
+         self.path = path
++        self.strict_identity = strict_identity
+         self.open()
+ 
+     def __enter__(self):
+@@ -20,6 +21,17 @@ class JL_MSCDevice:
+     #-------------------------------------------#
+ 
+     def open(self):
++        if self.strict_identity is not None:
++            self.dev = SCSIDev(self.path)
++            try:
++                identity = self.inquiry()
++                if identity != self.strict_identity:
++                    raise SCSIException('Unexpected target identity; no retry or mode change')
++            except Exception:
++                self.dev.close()
++                raise
++            print('Target confirmed: %s %s %s' % identity)
++            return
+         print("Waiting for [%s]" % self.path, end='', flush=True)
+ 
+         # TODO: proper handling for non-UBOOT devices!
+@@ -78,8 +90,10 @@ class JL_MSCDevice:
+         """ Send an Inquiry request and return manufacturer, product and revision strings """
+ 
+         data = bytearray(36)
+-        self.dev.execute(b'\x12' + b'\x00\x00' + len(data).to_bytes(2, 'big')
++        residue = self.dev.execute(b'\x12' + b'\x00\x00' + len(data).to_bytes(2, 'big')
+                                                + b'\x00', None, data)
++        if residue != 0 or len(data) != 36:
++            raise SCSIException('Incomplete inquiry')
+ 
+         return (
+             str(data[8:16], 'ascii').strip(),
+@@ -110,14 +124,17 @@ class JL_MSCProtocolBase:
+     def cmd_exec(self, cmd, args, check_response=True):
+         """ Execute command - no data (response is received instead) """
+         resp = bytearray(16)
+-        self.dev.execute(self.cmd_prepare_cdb(cmd, args), None, resp)
++        residue=self.dev.execute(self.cmd_prepare_cdb(cmd, args), None, resp)
++        if residue!=0 or len(resp)!=16:
++            raise SCSIException('Incomplete command response; stop without retry')
+ 
+         rcmd = int.from_bytes(resp[:2], 'big')
+         resp = bytes(resp[2:])
+ 
+         if check_response:
+             # Check if the command in response matched the sent one
+-            assert(cmd == rcmd)
++            if cmd != rcmd:
++                raise SCSIException('Command response echo mismatch; stop without retry')
+             return resp
+         else:
+             # Return raw-ish response
+@@ -126,12 +143,16 @@ class JL_MSCProtocolBase:
+     def cmd_exec_datain(self, cmd, args, dlen):
+         """ Execute command - data in (receive from device) """
+         data = bytearray(dlen)
+-        self.dev.execute(self.cmd_prepare_cdb(cmd, args), None, data)
++        residue=self.dev.execute(self.cmd_prepare_cdb(cmd, args), None, data)
++        if residue!=0 or len(data)!=dlen:
++            raise SCSIException('Incomplete data read; stop without retry')
+         return bytes(data)
+ 
+     def cmd_exec_dataout(self, cmd, args, data):
+         """ Execute command - data out (send to device) """
+-        self.dev.execute(self.cmd_prepare_cdb(cmd, args), data, None)
++        residue=self.dev.execute(self.cmd_prepare_cdb(cmd, args), data, None)
++        if residue!=0:
++            raise SCSIException('Incomplete data write; stop without retry')
+ 
+ 
+ 
+@@ -344,8 +365,10 @@ class JL_LoaderV2(JL_MSCProtocolBase):
+ 
+     def flash_erase_sector(self, addr):
+         """ Erase flash sector """
+-        self.cmd_exec(JL_LoaderV2.Cmd.ERASE_FLASH_SECTOR,
+-                            addr.to_bytes(4, 'big'))
++        response=self.cmd_exec(JL_LoaderV2.Cmd.ERASE_FLASH_SECTOR,
++                              addr.to_bytes(4, 'big'))
++        if response[0]!=0:
++            raise SCSIException('Sector erase returned an error; stop without retry')
+ 
+     def flash_erase_chip(self):
+         """ Erase flash chip """
+diff --git a/jluboottool.py b/jluboottool.py
+index 04b9e05..eadf2ea 100644
+--- a/jluboottool.py
++++ b/jluboottool.py
+@@ -19,6 +19,20 @@ ap = argparse.ArgumentParser(description='JieLi UBOOT tool - a tool to interact
+ ap.add_argument('--device', help='Path to a JieLi "UBOOT/DEVICE/UDISK" disk device, e.g. "/dev/sg2" or "\\\\.\\E:"')
+ 
+ ap.add_argument('--chip', help='Narrow down the search/match to a specific chip family e.g. "BR17" or series name e.g. "ac690n"')
++ap.add_argument('--reuse-loader',action='store_true',
++                help='Use a known running RAM helper without uploading or jumping again')
++ap.add_argument('--io-size',type=int,choices=(256,),
++                help='Limit flash I/O chunks to the reviewed WL82 256-byte size')
++ap.add_argument('--fm1-bench',action='store_true',
++                help='Strict FM-1 identity, no open retries; verified 4 KiB application-sector writes only')
++ap.add_argument('--fm1-stock-power',action='store_true',
++                help='With --fm1-bench, permit the reviewed stock-power candidate through sector 0x30000')
++ap.add_argument('--fm1-nes-cdc',action='store_true',
++                help='With --fm1-bench, permit sectors covering the full stock V14 application slot (caller must preserve shared config bytes)')
++ap.add_argument('--fm1-load',action='store_true',
++                help='Strict FM-1 identity; upload the existing WL82 RAM loader once, then help only')
++ap.add_argument('--fm1-reset',action='store_true',
++                help='Strict FM-1 identity; reuse loader and send only reset 1 (no flash commands)')
+ 
+ ap.add_argument('--arg-target', type=int, metavar='VAL', default=1, choices=range(16),
+                 help='Target memory type [0:SDRAM, 1/4: SPI NOR, 2/5: SPI NAND, 7: OTP]; default is %(default)d')
+@@ -39,6 +53,26 @@ ap.add_argument('cmds', nargs='*',
+                      ' Finally a solution for using it in automated build enviroments! (sort of)')
+ 
+ args = ap.parse_args()
++fm1_guarded = args.fm1_bench or args.fm1_load or args.fm1_reset
++if args.fm1_load or args.fm1_reset:
++    if (args.fm1_bench or args.fm1_stock_power or args.fm1_nes_cdc or
++            (args.fm1_load and args.fm1_reset) or not args.device or
++            args.chip != 'wl82' or args.io_size != 256 or args.loader_arg is not None or
++            (args.arg_target,args.arg_clkdiv,args.arg_spimode) != (1,0,0)):
++        ap.error('FM-1 loader/reset requires fixed WL82 settings and no write scope flags')
++    if args.fm1_load and (args.reuse_loader or args.cmds != ['help']):
++        ap.error('--fm1-load permits one loader upload followed by help only')
++    if args.fm1_reset and (not args.reuse_loader or args.cmds != ['reset 1']):
++        ap.error('--fm1-reset requires --reuse-loader and exactly reset 1')
++if args.fm1_stock_power and not args.fm1_bench:
++    ap.error('--fm1-stock-power requires --fm1-bench')
++if args.fm1_nes_cdc and (not args.fm1_bench or args.fm1_stock_power):
++    ap.error('--fm1-nes-cdc requires --fm1-bench and cannot combine with --fm1-stock-power')
++if args.fm1_bench:
++    if not args.device or not args.reuse_loader or args.io_size != 256 or not args.cmds:
++        ap.error('--fm1-bench requires explicit device, --reuse-loader, --io-size 256 and commands')
++    if any(command.split()[0] not in ('read','write') for command in args.cmds if command.split()) or any(not command.split() for command in args.cmds):
++        ap.error('--fm1-bench permits only read/write commands')
+ 
+ ###############################################################################
+ 
+@@ -83,11 +117,17 @@ class DasShell(cmd.Cmd):
+     def __init__(self, dev):
+         super(DasShell, self).__init__()
+         self.dev = dev
++        self.fm1_bench = args.fm1_bench
++        self.fm1_write_last = 0x30000 if getattr(args,'fm1_stock_power',False) else 0x2c000
++        if getattr(args,'fm1_nes_cdc',False):self.fm1_write_last=(0x4120+584956-1)&~0xfff
+ 
+-        try:
+-            self.flash_io_max = self.dev.usb_buffer_size()
+-        except:
+-            self.flash_io_max = 512
++        if args.io_size is not None:
++            self.flash_io_max = args.io_size
++        else:
++            try:
++                self.flash_io_max = self.dev.usb_buffer_size()
++            except:
++                self.flash_io_max = 512
+ 
+         # FIXME: new loaders (br23+) use a very small buffer (just 256 bytes long) for *all* I/O,
+         #  and the memory operations will happily overwrite past this buffer, while the flash I/O won't.
+@@ -329,8 +369,21 @@ class DasShell(cmd.Cmd):
+             length = fil.tell()
+             fil.seek(0)
+ 
++            if self.fm1_bench and (length != 4096 or address % 4096 or not 0x4000 <= address <= self.fm1_write_last):
++                raise ValueError('FM-1 bench write must be one aligned 4 KiB application sector')
++            expected = fil.read() if self.fm1_bench else None
++            fil.seek(0)
+             self.flash_erase(address, length)
++            if self.fm1_bench:
++                erased = b''.join(self.dev.flash_read(address+i,256) for i in range(0,length,256))
++                if erased != b'\xff' * length:
++                    raise SCSIException('Erase readback mismatch; stopped before programming')
+             self.flash_write_file(address, length, fil)
++            if self.fm1_bench:
++                actual = b''.join(self.dev.flash_read(address+i,256) for i in range(0,length,256))
++                if actual != expected:
++                    raise SCSIException('Program readback mismatch; stopped without retry')
++                print('Sector verified: 0x%x' % address)
+ 
+     #-------------------------------------
+ 
+@@ -601,6 +654,9 @@ class DasShell(cmd.Cmd):
+         try:
+             self.dev.run_app(code)
+         except Exception as e:
++            if getattr(args, 'fm1_reset', False):
++                # A disappearing USB device is NOT proof of a successful boot.
++                raise
+             print("<!> Exiting..", e)
+             return True
+ 
+@@ -647,7 +703,7 @@ else:
+ 
+ 
+ 
+-with JL_MSCDevice(devpath) as dev:
++with JL_MSCDevice(devpath,strict_identity=('WL82','UBOOT1.00','1.00') if fm1_guarded else None) as dev:
+     vendor, product, prodrev = dev.inquiry()
+ 
+     chipname = vendor.lower()
+@@ -666,7 +722,7 @@ with JL_MSCDevice(devpath) as dev:
+ 
+     runtheloader = False
+ 
+-    if product == 'UBOOT1.00':
++    if product == 'UBOOT1.00' and not args.reuse_loader:
+         runtheloader = True
+ 
+     if runtheloader:
+@@ -735,17 +791,21 @@ with JL_MSCDevice(devpath) as dev:
+     print('================ Quick info ==================')
+     print('  ** %s (%s series) **' % (chipname.upper(), '/'.join(chipspec['name'])))  # redundant?
+ 
+-    try:
+-        print('  >> Chip key: 0x%04X <<' % loader.chip_key())
+-    except Exception:
+-        print('  ** failed to get the chip key **')
++    # Avoid querying or displaying the device's chip key during this probe.
++    # This only avoids the tool's optional READ_KEY request; it does not imply
++    # that the device itself cannot impose an access check on flash reads.
++    print('  >> Chip key query skipped for this probe <<')
+ 
+     try:
+         ondev = loader.online_device()
++        if fm1_guarded and ondev != {'type':3,'id':0x856014}:
++            raise SCSIException('FM-1 flash identity mismatch')
+         print('  - Online device:')
+         print('     ID: 0x%06x' % ondev['id'])
+         print('     Type: 0x%02x (%s)' % (ondev['type'], dev_type_strs.get(ondev['type'], 'unknown')))
+     except Exception:
++        if fm1_guarded:
++            raise
+         print('  ** failed to get the online device info **')
+ 
+     print('==============================================')
+diff --git a/scsiio/win32port.py b/scsiio/win32port.py
+index c0ff5cb..2c0f4ab 100755
+--- a/scsiio/win32port.py
++++ b/scsiio/win32port.py
+@@ -132,6 +132,11 @@ class SCSIDev(SCSIDevBase):
+         if not res:
+             raise SCSIException('Transfer failed: %s' % ctypes.WinError())
+ 
++        if sptd.status != 0:
++            raise SCSIException('SCSI command failed with status 0x%02x' % sptd.status)
++        if sptd.data_len > datalen:
++            raise SCSIException('Transfer reported more bytes than requested')
++
+         if data_in:
+             inlen = sptd.data_len
+             data_in[:inlen] = bytearray(databuff.raw[:inlen])

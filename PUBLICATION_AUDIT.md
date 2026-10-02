@@ -1,5 +1,16 @@
 # Remaining publication audit
 
+## Application-update tooling follow-up — 2026-10-02
+
+The application-only packager, bounded sparse planner and existing-jltool wrapper
+are now included as source. The earlier snapshot below predates this addition.
+MIT jl-misctools routine adaptations and the transferred MIT jl-uboot-tool Python
+source patch are attributed in THIRD_PARTY.md with a license copy. No vendor
+loader, full stock image, unit-derived sector plan or generated app package is
+added to the source inventory. New FM-1 geometry/hash checks retain their actual
+stock-research provenance. The new hardware execution path is not bench-qualified;
+technical results are recorded in VALIDATION.md. Private visibility is unchanged.
+
 Date: 2026-09-30. Reviewed baseline: `a1a7fae`, with this documentation-only
 follow-up. Scope: the source candidate, pinned dependencies relevant to included
 adaptations, boot/power provenance and available GitHub publication surfaces.

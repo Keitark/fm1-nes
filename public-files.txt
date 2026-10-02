@@ -119,3 +119,10 @@ scripts/release.py
 tests/test_release.py
 tests/test_overlay_notices.py
 tests/test_lcd_references.py
+APP_UPDATES.md
+licenses/kagaimiq-MIT.txt
+scripts/app_package.py
+scripts/jl_formats.py
+scripts/jltool_update.py
+tests/test_app_update.py
+tools/jltool-fm1-guards.patch.txt
