@@ -110,6 +110,16 @@ recorded in [VALIDATION.md](VALIDATION.md); it is not hardware certification.
 
 ## Start with USB serial and a way back to UBOOT
 
+**Already integrated in this repository:** USB CDC serial diagnostics and the
+guarded two-step `UBOOT` / `UBOOT CONFIRM` command are implemented in
+`firmware/usb-diag/` and included in the USB-only, NES and optional USB-audio
+builds. You do not need to implement this update-entry path from scratch.
+The V14 composite bench test above successfully entered UBOOT through it.
+See [the implemented command sequence](#serial-entry-implemented-in-this-example)
+and [APP_UPDATES.md](APP_UPDATES.md) for programming with the existing Jieli tool.
+This enters download mode; it is not self-flashing over CDC, and it does not
+provide those commands to an unmodified stock firmware.
+
 Our recommended first custom firmware is small: **USB CDC serial diagnostics,
 plus a command that returns the device to Jieli UBOOT/download mode**. Establish
 this before working on the LCD, audio engine or a complete application.
@@ -118,7 +128,7 @@ this before working on the LCD, audio engine or a complete application.
    and a proven way to enter download mode independently of the application.
 2. **Bring up USB serial.** Confirm that the PC can enumerate the device and
    exchange diagnostic commands and responses reliably.
-3. **Implement and test serial UBOOT entry.** Confirm that the device leaves CDC
+3. **Test the included serial UBOOT entry.** Confirm that the device leaves CDC
    mode and re-enumerates in download mode, then verify the appropriate upload
    and normal-boot procedure for your hardware.
 4. **Add peripherals one at a time.** Test the LCD/backlight, audio, keys, knobs
