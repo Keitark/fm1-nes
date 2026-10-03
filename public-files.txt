@@ -13,6 +13,16 @@ ROM_GUIDE.md
 THIRD_PARTY.md
 USB_AUDIO.md
 VALIDATION.md
+examples/fablenes/LICENSE.txt
+examples/fablenes/README.md
+examples/fablenes/build.py
+examples/fablenes/gfx/art.py
+examples/fablenes/gfx/fontdata.py
+examples/fablenes/gfx/gen_all.py
+examples/fablenes/gfx/gen_nrom.py
+examples/fablenes/gfx/music.py
+examples/fablenes/nes_nrom.cfg
+examples/fablenes/src/main_nrom.s
 firmware/nes/CMakeLists.txt
 firmware/nes/audit_boot.py
 firmware/nes/audit_power.py
@@ -144,6 +154,7 @@ scripts/jltool_update.py
 scripts/release.py
 tests/test_app_update.py
 tests/test_build_config.py
+tests/test_homebrew.py
 tests/test_lcd_references.py
 tests/test_overlay_notices.py
 tests/test_release.py

@@ -9,6 +9,12 @@ the required destination.
 UBOOT on command.** Establish an observable, repeatable update loop before
 building the rest of your application.
 
+**This first milestone is already implemented in `firmware/usb-diag/`.** Build
+and test the included CDC diagnostics and `UBOOT` / `UBOOT CONFIRM` handler;
+you do not need to recreate them. The later NES/composite profiles retain the
+same path, with V14 serial-entry evidence recorded in README.md/VALIDATION.md.
+Initial installation/recovery and your own device acceptance remain necessary.
+
 ## 1. Read the existing work first
 
 Start with this [README](README.md), [validation record](VALIDATION.md) and

@@ -1,5 +1,35 @@
 # Source-release validation
 
+## Optional original NROM game — 2026-10-03
+
+- Maintainer identified and authorized the Claude Code-assisted game's original
+  NROM source/asset generators, subsequently selecting MIT for that example.
+  Only optional source is added;
+  no compiler, emulator, compiled ROM or FM-1 binary is tracked.
+- Existing Python and externally supplied ca65/ld65 rebuilt the NROM cartridge:
+  40976 bytes, mapper0, 32KiB PRG/8KiB CHR ROM, SHA256
+  `8dbe33a3f00d76d88c4618917833f3a9dbb198b2de3ee684a4c59a2cc4bdc687`,
+  identical to the original local file. Original project sources were unchanged.
+- FM-1 composite application/static audit/package passed:217680 bytes, SHA256
+  `c0c3422aac8b27115d6bfd08ac3c23b17452e926219a2712e257fbc1347cf8d3`.
+  **13/13** linked-image/corruption tests and **50/50** source/config tests passed.
+  Source inventory is161 files including the game's MIT notice, still excluding
+  all generated outputs/plans.
+- Sparse plan from the previously verified private V14-backed image needs12
+  changed sectors, directory last. Physical test results are recorded separately;
+  offline format/build checks are not gameplay or audio acceptance.
+- User-authorized existing-writer deployment verified those12 sectors and one
+  complete final readback, preserving boot/config/reserved regions. Serial UBOOT
+  entry succeeded. The later reset request was refused before sending a command
+  because no UBOOT disk was present; no reset/reflash was retried. Actual normal
+  USB CDC observation then verified advancing frames4058..4841, zero reported
+  faults/underruns and valid volume telemetry. The cause of the intervening mode
+  change was not established. The private broker's unconsumed reset permit leaves
+  its safety latch intact; no protected state was manually cleared.
+- The NROM source contains five stage/boss/music/scroll tables and loops from
+  stage5 to1. This confirms included logic, not all-five-stage physical gameplay.
+  User screen/input/listening and sustained-duplex acceptance remain pending.
+
 ## Source-publication refresh — 2026-10-03
 
 - Source/config tests **45/45**, NES host tests **25/25**, USB host tests

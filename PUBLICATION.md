@@ -8,6 +8,12 @@ That is the source-publication decision; binary/product rights and acceptance
 remain separate. Preserve truthful provenance rather than claiming clean-room
 development or erasing evidence.
 
+The optional original NROM game source/asset generators were separately
+authorized by the maintainer on the same date, with **MIT** subsequently selected
+for that original example. Imported dependency licenses are unchanged. Generated game
+binaries remain excluded by this source-release policy; see ROM_GUIDE.md and
+examples/fablenes/README.md. No commercial game is bundled.
+
 ## Before making the repository public
 
 - [x] Review the added GPLv3 MDX USB/packet port and combined firmware license

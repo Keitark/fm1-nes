@@ -46,12 +46,14 @@ validator; its SHA-256 is
 This is a format check, not FM-1 gameplay acceptance. Recompute the hash for
 your build; do not assume a later game revision has identical bytes.
 
-The game is not yet bundled here: the exact source/asset publication and
-license decision is separate from this FM-1 source release. If you already
-have the project, its `build_nrom.ps1` builds the NROM edition using its existing
-cc65 toolchain; then use the explicit local-ROM build commands below with
-`game_nrom.nes`. Do not substitute the separately linked third-party game
-repository or assume its public availability grants redistribution rights.
+The maintainer identified this game as their own and explicitly authorized its
+source and generated original assets on 2026-10-03, then selected **MIT**.
+The optional [NROM source example](examples/fablenes/README.md) is included;
+compiled game/firmware files are not. Build it with existing Python and external
+cc65 tools, then embed it using the explicit path/hash instructions below.
+The example has its own copyable build commands. Do not substitute the separately
+linked third-party game repository or assume its public availability grants
+redistribution rights. The original local project stays unchanged.
 
 ## Use your own cartridge
 

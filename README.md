@@ -70,6 +70,10 @@ offline package/plan and explicit load/backup/flash/reset commands.
 Read the [ROM guide](ROM_GUIDE.md) to build the original diagnostic or select
 your own compatible homebrew cartridge. A `.nes` cartridge is embedded in
 `app.bin`; it is **not** itself an FM-1 firmware image or a separate flash slot.
+The maintainer's Claude Code-assisted
+[ぼくがかんがえたさいきょうのファミコンゲーム](examples/fablenes/README.md)
+is supplied as an optional MIT-licensed **NROM source example**, including source
+asset generators. Build the game locally; no compiled ROM/toolchain is bundled.
 
 ## Research and attribution
 
@@ -112,6 +116,16 @@ actual firmware and hardware. See the guide's [AI-agent starting prompt](GETTING
 
 ## Start with USB serial and a way back to UBOOT
 
+**Already integrated in this repository:** USB CDC serial diagnostics and the
+guarded two-step `UBOOT` / `UBOOT CONFIRM` command are implemented in
+`firmware/usb-diag/` and included in the USB-only, NES and optional USB-audio
+builds. You do not need to implement this update-entry path from scratch.
+The V14 composite bench test above successfully entered UBOOT through it.
+See [the implemented command sequence](#serial-entry-implemented-in-this-example)
+and [APP_UPDATES.md](APP_UPDATES.md) for programming with the existing Jieli tool.
+This enters download mode; it is not self-flashing over CDC, and it does not
+provide those commands to an unmodified stock firmware.
+
 Our recommended first custom firmware is small: **USB CDC serial diagnostics,
 plus a command that returns the device to Jieli UBOOT/download mode**. Establish
 this before working on the LCD, audio engine or a complete application.
@@ -120,7 +134,7 @@ this before working on the LCD, audio engine or a complete application.
    and a proven way to enter download mode independently of the application.
 2. **Bring up USB serial.** Confirm that the PC can enumerate the device and
    exchange diagnostic commands and responses reliably.
-3. **Implement and test serial UBOOT entry.** Confirm that the device leaves CDC
+3. **Test the included serial UBOOT entry.** Confirm that the device leaves CDC
    mode and re-enumerates in download mode, then verify the appropriate upload
    and normal-boot procedure for your hardware.
 4. **Add peripherals one at a time.** Test the LCD/backlight, audio, keys, knobs
@@ -323,6 +337,11 @@ before distributing a USB product; no USB-IF certification is claimed.
 Project-authored material is currently licensed under
 [Apache-2.0](LICENSE). The license badge describes that current choice; this
 repository has not been switched to MIT.
+
+The optional original game in `examples/fablenes/` is an exception: its source
+and generated original assets are **MIT**, as selected by the maintainer;
+see [its license](examples/fablenes/LICENSE.txt). This does not relicense the
+GPLv3 USB code, Apache dependencies or the combined firmware.
 
 External dependencies and any upstream-derived portions retain their applicable
 licenses and notices. The project's license does not grant rights to stock
