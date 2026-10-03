@@ -54,7 +54,7 @@ your own compatible homebrew cartridge. A `.nes` cartridge is embedded in
 `app.bin`; it is **not** itself an FM-1 firmware image or a separate flash slot.
 The maintainer's Claude Code-assisted
 [ぼくがかんがえたさいきょうのファミコンゲーム](examples/fablenes/README.md)
-is supplied as an optional Apache-2.0 **NROM source example**, including source
+is supplied as an optional MIT-licensed **NROM source example**, including source
 asset generators. Build the game locally; no compiled ROM/toolchain is bundled.
 
 ## Research and attribution
@@ -350,6 +350,11 @@ before distributing a USB product; no USB-IF certification is claimed.
 Project-authored material is currently licensed under
 [Apache-2.0](LICENSE). The license badge describes that current choice; this
 repository has not been switched to MIT.
+
+The optional original game in `examples/fablenes/` is an exception: its source
+and generated original assets are **MIT**, as selected by the maintainer;
+see [its license](examples/fablenes/LICENSE.txt). This does not relicense the
+GPLv3 USB code, Apache dependencies or the combined firmware.
 
 External dependencies and any upstream-derived portions retain their applicable
 licenses and notices. The project's license does not grant rights to stock

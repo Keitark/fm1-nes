@@ -2,8 +2,8 @@
 
 An optional horizontal-scrolling shoot-'em-up authored by the maintainer with
 Claude Code assistance. The maintainer identified this project and authorized
-its original source and generated game assets under **Apache-2.0** on
-2026-10-03; see the repository's [LICENSE](../../LICENSE). This is not a Nintendo
+its original source and generated game assets on 2026-10-03, then selected
+**MIT**; see this example's [LICENSE.txt](LICENSE.txt). This is not a Nintendo
 game and no commercial ROM/assets or external toolchain are bundled.
 
 This directory contains the **mapper-0 NROM** edition: 32 KiB PRG and genuine

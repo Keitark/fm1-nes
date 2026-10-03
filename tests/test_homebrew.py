@@ -50,10 +50,11 @@ class HomebrewTests(unittest.TestCase):
     def test_source_inventory_retains_license_and_no_game_binaries(self):
         names = (ROOT / 'public-files.txt').read_text().splitlines()
         example = [name for name in names if name.startswith('examples/fablenes/')]
-        self.assertEqual(len(example), 9)
+        self.assertEqual(len(example), 10)
         for name in example:
-            if not name.endswith('README.md'):
-                self.assertIn('SPDX-License-Identifier: Apache-2.0', (ROOT / name).read_text(encoding='utf-8'))
+            if not name.endswith(('README.md', 'LICENSE.txt')):
+                self.assertIn('SPDX-License-Identifier: MIT', (ROOT / name).read_text(encoding='utf-8'))
+        self.assertIn('Copyright (c) 2026 Keitark', (EXAMPLE / 'LICENSE.txt').read_text())
         self.assertFalse(any(name.endswith(('.nes', '.bin', '.exe')) for name in names))
 
 

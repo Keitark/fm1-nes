@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: MIT
 # Copyright 2026 Keitark. Maintainer-authored, Claude Code-assisted game.
 # Published with maintainer authorization; see examples/fablenes/README.md.
 """Bitmap font data: 5x7 latin/digits and 16x16 kana for the title logo."""

@@ -13,6 +13,7 @@ ROM_GUIDE.md
 THIRD_PARTY.md
 USB_AUDIO.md
 VALIDATION.md
+examples/fablenes/LICENSE.txt
 examples/fablenes/README.md
 examples/fablenes/build.py
 examples/fablenes/gfx/art.py

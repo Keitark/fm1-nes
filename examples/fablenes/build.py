@@ -1,6 +1,6 @@
 """Build the optional original NROM cartridge. No downloads or device I/O.
 
-SPDX-License-Identifier: Apache-2.0
+SPDX-License-Identifier: MIT
 Copyright 2026 Keitark.
 """
 import argparse

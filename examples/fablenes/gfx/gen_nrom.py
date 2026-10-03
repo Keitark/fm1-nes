@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: MIT
 # Copyright 2026 Keitark. Maintainer-authored, Claude Code-assisted game.
 # Published with maintainer authorization; see examples/fablenes/README.md.
 """Generate NROM (mapper 0, no extra chip, REAL CHR-ROM) build data.

@@ -9,7 +9,8 @@ remain separate. Preserve truthful provenance rather than claiming clean-room
 development or erasing evidence.
 
 The optional original NROM game source/asset generators were separately
-authorized under Apache-2.0 by the maintainer on the same date. Generated game
+authorized by the maintainer on the same date, with **MIT** subsequently selected
+for that original example. Imported dependency licenses are unchanged. Generated game
 binaries remain excluded by this source-release policy; see ROM_GUIDE.md and
 examples/fablenes/README.md. No commercial game is bundled.
 

@@ -3,7 +3,8 @@
 ## Optional original NROM game — 2026-10-03
 
 - Maintainer identified and authorized the Claude Code-assisted game's original
-  NROM source/asset generators under Apache-2.0. Only optional source is added;
+  NROM source/asset generators, subsequently selecting MIT for that example.
+  Only optional source is added;
   no compiler, emulator, compiled ROM or FM-1 binary is tracked.
 - Existing Python and externally supplied ca65/ld65 rebuilt the NROM cartridge:
   40976 bytes, mapper0, 32KiB PRG/8KiB CHR ROM, SHA256
@@ -12,7 +13,8 @@
 - FM-1 composite application/static audit/package passed:217680 bytes, SHA256
   `c0c3422aac8b27115d6bfd08ac3c23b17452e926219a2712e257fbc1347cf8d3`.
   **13/13** linked-image/corruption tests and **50/50** source/config tests passed.
-  Source inventory is160 files, still excluding all generated outputs/plans.
+  Source inventory is161 files including the game's MIT notice, still excluding
+  all generated outputs/plans.
 - Sparse plan from the previously verified private V14-backed image needs12
   changed sectors, directory last. Physical test results are recorded separately;
   offline format/build checks are not gameplay or audio acceptance.

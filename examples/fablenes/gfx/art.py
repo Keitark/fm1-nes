@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: MIT
 # Copyright 2026 Keitark. Maintainer-authored, Claude Code-assisted game.
 # Published with maintainer authorization; see examples/fablenes/README.md.
 """Sprite artwork: player ship, enemies, boss, bullets, explosions.

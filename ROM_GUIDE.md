@@ -47,7 +47,7 @@ This is a format check, not FM-1 gameplay acceptance. Recompute the hash for
 your build; do not assume a later game revision has identical bytes.
 
 The maintainer identified this game as their own and explicitly authorized its
-source and generated original assets under **Apache-2.0** on 2026-10-03.
+source and generated original assets on 2026-10-03, then selected **MIT**.
 The optional [NROM source example](examples/fablenes/README.md) is included;
 compiled game/firmware files are not. Build it with existing Python and external
 cc65 tools, then embed it using the explicit path/hash instructions below.

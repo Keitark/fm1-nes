@@ -80,7 +80,8 @@ source release; SDK/toolchain/cartridge redistribution boundaries still apply.
 procedural asset generators and linker configuration from the maintainer's
 Claude Code-assisted “ぼくがかんがえたさいきょうのファミコンゲーム”. On
 2026-10-03 the maintainer identified it as their own and explicitly authorized
-its original source and generated game assets under Apache-2.0. That report and
+publication of its original source and generated game assets, then selected
+**MIT** for this example; see examples/fablenes/LICENSE.txt. That report and
 grant are recorded, not an exhaustive independent asset-authorship certification.
 Imported original game logic/data are unchanged except for publication headers;
 the optional Python build wrapper is a new source-only integration convenience.
