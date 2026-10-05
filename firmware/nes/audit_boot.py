@@ -215,6 +215,10 @@ def audit(elf,app,require_peripherals=False,rom='rom50',display_only=False,requi
             # Persistent ADC cadence accumulator adds4 bytes: reviewed same
             # store0x2003364 d1 ec07 16 now targets ota_status+356.
             if usb_audio:encodings.update({356:'d1 ec 07 16'})
+            # Controller-II microphone snapshot adds one4-byte global.
+            # Reviewed store at0x2003364: ota_status0x1c46db0 +360
+            # = trace0x1c46f18; wrapper and marker unchanged.
+            if usb_audio:encodings.update({360:'d1 ec 0b 16'})
             require(delta in encodings,'USB trace merged-global offset changed: '+str(delta))
             struct.pack_into('<I',expected_wrapper,4,value('ota_status'))
             expected_wrapper[14:16]=bytes.fromhex(encodings[delta])
@@ -341,6 +345,20 @@ def audit(elf,app,require_peripherals=False,rom='rom50',display_only=False,requi
                     'Composite USB setup policy instructions changed')
             for name in ('fm1_uac_desc_config','fm1_usb_audio_dac','fm1_usb_audio_stop','fm1_uac_descriptor','fm1_uac_dma','fm1_audio_queue_raw24','fm1_peripheral_usb_audio_quiesce'):
                 require(name in symbols,'Missing composite audio component '+name)
+            # The emulated CPU must never enter an audio spinlock/IRQ mask.
+            # Reviewed getter is just a volatile load from ota_status+196.
+            require('mic_bits' in symbols and symbols['mic_bits'][1]==4 and
+                    bss[3]<=value('mic_bits') and value('mic_bits')+4<=bss[3]+bss[5] and
+                    value('mic_bits')-value('ota_status')==196,
+                    'Microphone snapshot RAM placement changed')
+            require('fm1_usb_audio_mic_bits' in symbols and symbols['fm1_usb_audio_mic_bits'][1]==12 and
+                    code_at(value('fm1_usb_audio_mic_bits'),12)==
+                    b'\xc0\xff'+struct.pack('<I',value('ota_status'))+bytes.fromhex('d0 ec 04 0c 80 00'),
+                    'Microphone getter must be a single volatile load')
+            mic=calls_to('nes_read_cpu','fm1_usb_audio_mic_bits')
+            require(len(mic)==1 and code_at(value('nes_read_cpu')+mic[0]+4,8)==bytes.fromhex('60 e1 04 00 10 19 00 17'),
+                    'NES microphone controller bit path changed')
+            require(b'MIC ON' in app and b'MIC source=usb-playback' in app,'Missing microphone runtime switch/status')
             audio_dma,audio_size,_=symbols['fm1_uac_dma']
             require(audio_size==512 and audio_dma%64==0 and bss[3]<=audio_dma and audio_dma+audio_size<=bss[3]+bss[5],
                     'Audio DMA size/alignment/internal-RAM placement changed')

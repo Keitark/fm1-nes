@@ -19,6 +19,10 @@ add_custom_command(OUTPUT "${APU_GENERATED}"
     COMMAND ${Python3_EXECUTABLE} "${APU_OVERLAY}" --nes-apu "${CORE}/src/nes_apu.c" --out "${APU_GENERATED}"
     DEPENDS "${APU_OVERLAY}" "${CORE}/src/nes_apu.c" VERBATIM)
 set(RENDER_GENERATED "${CMAKE_CURRENT_BINARY_DIR}/generated/fm1-nes.c")
+set(CPU_GENERATED "${CMAKE_CURRENT_BINARY_DIR}/generated/fm1-nes_cpu.c")
+add_custom_command(OUTPUT "${CPU_GENERATED}"
+    COMMAND ${Python3_EXECUTABLE} "${APU_OVERLAY}" --nes-cpu "${CORE}/src/nes_cpu.c" --out "${CPU_GENERATED}"
+    DEPENDS "${APU_OVERLAY}" "${CORE}/src/nes_cpu.c" VERBATIM)
 option(FM1_PROFILE_TESTING "Exercise instrumented core with host tests" OFF)
 option(FM1_TILE_TESTING "Exercise tile optimized renderer with reference oracle" ON)
 set(PROFILE_OVERLAY_ARGS)
@@ -33,7 +37,7 @@ add_custom_command(OUTPUT "${RENDER_GENERATED}"
     DEPENDS "${APU_OVERLAY}" "${CORE}/src/nes.c" VERBATIM)
 add_library(fm1_nes STATIC src/fm1_nes.c src/fm1_nes_target.c src/fm1_nes_fx.c src/fm1_channel_fx.c
     src/fm1_board.c src/fm1_audio_queue.c src/fm1_stock_keys.c
-    "${RENDER_GENERATED}" ${CORE}/src/nes_cpu.c ${CORE}/src/nes_ppu.c "${APU_GENERATED}")
+    "${RENDER_GENERATED}" "${CPU_GENERATED}" ${CORE}/src/nes_ppu.c "${APU_GENERATED}")
 target_compile_definitions(fm1_nes PRIVATE FM1_NES_HOST_TEST=1)
 if(FM1_TILE_TESTING)
     target_compile_definitions(fm1_nes PUBLIC FM1_TILE_TESTING=1)
@@ -53,6 +57,11 @@ if(MSVC)
     target_compile_definitions(nes_host PRIVATE _CRT_SECURE_NO_WARNINGS)
 endif()
 enable_testing()
+add_executable(microphone_tests tests/microphone_tests.c ../usb-audio/bridge.c)
+target_compile_definitions(microphone_tests PRIVATE FM1_USB_AUDIO=1 FM1_CPU_CORE_FILE="${CPU_GENERATED}")
+target_include_directories(microphone_tests PRIVATE port ${CORE}/inc ../usb-audio)
+target_link_libraries(microphone_tests PRIVATE fm1_nes)
+add_test(NAME controller_ii_microphone COMMAND microphone_tests)
 add_executable(profile_tests tests/profile_tests.c src/fm1_profile.c)
 target_include_directories(profile_tests PRIVATE include)
 target_compile_definitions(profile_tests PRIVATE FM1_NES_PROFILE=1)

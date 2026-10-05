@@ -155,6 +155,12 @@ def main():
             speed_sources.add(NES/'src/fm1_channel_fx.c')
     sources.append(SDK/'apps/common/usb/usb_config.c')
     overlays={}
+    if a.nes_smb1:
+        original=core/'src/nes_cpu.c';target=out/'fm1-nes_cpu.c'
+        target.write_text(vendor_overlay.nes_microphone(original.read_text(encoding='utf-8')),encoding='utf-8')
+        sources[sources.index(original)]=target
+        speed_sources.remove(original);speed_sources.add(target)
+        overlays[str(original)]=hashlib.sha256(original.read_bytes()).hexdigest()
     if a.nes_render_skip:
         original=core/'src/nes.c';target=out/'fm1-nes.c'
         transformed=vendor_overlay.nes_render_skip(original.read_text(encoding='utf-8'))
@@ -179,7 +185,7 @@ def main():
     used=out/'sdk.used';used.write_text(used.read_text()+'\nmemory_init\nfm1_usb_task\ncdc_read_data\ncdc_write_data\nfm1_cdc_ready\nfm1_diag_feed\nfm1_usb_device_descriptor\nfm1_usb_config_descriptor\n')
     used.write_text(used.read_text()+'fm1_usb_rx_irq\ngo_mask_usb_updata\nnvram_set_boot_state\n')
     if a.nes_smb1:used.write_text(used.read_text()+'fm1_board_run\nfm1_display_write\nfm1_audio_startup_process24\nfm1_nes_run\n')
-    if a.usb_audio:used.write_text(used.read_text()+'fm1_usb_audio_dac\nfm1_usb_audio_stop\nfm1_uac_desc_config\nfm1_uac_descriptor\n')
+    if a.usb_audio:used.write_text(used.read_text()+'fm1_usb_audio_dac\nfm1_usb_audio_stop\nfm1_uac_desc_config\nfm1_uac_descriptor\nfm1_usb_audio_mic_bits\n')
     ld=(out/'sdk.ld').read_text()
     for old,new in (('*(.data)','*(.data .data.*)'),('*(.bss)','*(.bss .bss.*)')):
         ld=vendor_overlay.once(ld,old,new)

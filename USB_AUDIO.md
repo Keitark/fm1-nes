@@ -20,6 +20,45 @@ mixing can clip when both signals are loud; lower PC level when combining them.
 The physical volume knob sets digital DAC master gain, not USB capture level.
 It remains sampled with NES stopped and CDC closed.
 
+## Controller II microphone switch
+
+The composite NES build includes a runtime switch over the existing CDC serial
+port (send one command at a time, LF only):
+
+```text
+MIC ON
+MIC OFF
+MIC STATUS
+```
+
+Default is **OFF**. With `MIC ON`, audio played by the PC to the FM-1 USB
+playback endpoint activates the emulated Famicom controller II microphone.
+To use a PC microphone, route that microphone to this playback endpoint in
+your host audio software; the FM-1 does not capture a physical microphone.
+Regular USB playback remains audible, capture stays isolated, and no game
+key/knob assignment changes. `MIC OFF` clears the signal immediately.
+`MIC STATUS` (also included in `TEST STATUS`) reports `enabled` and `active`.
+
+The [Famicom mic input](https://www.nesdev.org/wiki/NES_controller) is an
+immediate one-bit signal at `$4016` bit 2, not a serial pad bit at `$4017` or
+PCM input to the APU. Only games that read that microphone signal respond;
+do not expect an effect in games that ignore it.
+
+This implementation is a sound-activity approximation, not cycle-exact analog
+waveform emulation. Either channel can trigger it, including opposite-phase
+stereo. The fixed attack threshold is 1024 signed-16-bit counts (about -30 dBFS),
+release threshold 512, with a 10 ms hold. Adjust the PC playback level if needed.
+Detection uses consumed USB samples before master gain; NES music and USB
+capture do not trigger it. It shares the existing DAC callback and adds no
+interrupt, allocation or blocking wait. The CPU reads a volatile bit snapshot.
+Silence clears after the hold; unprimed/starved playback or stream stop clears
+immediately. A playback alternate-setting restart retains the switch but clears
+activity; USB reset/reconnect, UBOOT entry and firmware restart turn it OFF.
+Closing CDC alone does not turn it off. CDC-only builds reject these commands.
+
+Host detector, target lifecycle and actual generated CPU register tests pass;
+physical microphone-aware cartridge acceptance is still pending.
+
 UAC1 uses interfaces 2..4 and EP1 IN/OUT: fixed stereo PCM, 192 bytes per
 millisecond in each direction. CDC uses interfaces 0/1, EP2 OUT, EP2 IN
 notifications and EP3 IN data. The composite descriptor includes IADs. No

@@ -47,6 +47,20 @@ int main(void) {
 #endif
     fm1_diag_reset(&p);
     valid(&p);feed(&p,"COMMIT\n",31);CHECK(!p.verified && strstr(response,"COMMIT_BLOCKED"));
+    fm1_diag_reset(&p);feed(&p,"MIC ON\n",0);
+#if defined(FM1_USB_AUDIO) && defined(FM1_NES_PLAYER)
+    CHECK(p.mic_requested==2);
+    fm1_diag_reset(&p);feed(&p,"MIC OFF\n",0);CHECK(p.mic_requested==1);
+    fm1_diag_reset(&p);feed(&p,"MIC STATUS\n",0);CHECK(p.mic_requested==3);
+    fm1_diag_reset(&p);feed(&p,"MIC ON\nHELLO\n",0);CHECK(!p.mic_requested);
+    feed(&p,"MIC ON\r\n",0);CHECK(!p.mic_requested);
+    feed(&p,"MIC MAYBE\n",0);CHECK(!p.mic_requested && strstr(response,"ERR MIC"));
+    feed(&p,"BEGIN 00000001 00000000\n",0);feed(&p,"MIC ON\n",0);CHECK(!p.mic_requested && !p.active);
+    fm1_diag_reset(&p);feed(&p,"MIC ",0);feed(&p,"ON\n",0);CHECK(p.mic_requested==2);
+    fm1_diag_reset(&p);CHECK(!p.mic_requested);
+#else
+    CHECK(!p.mic_requested && strstr(response,"MIC_REQUIRES_NES_USB_AUDIO"));
+#endif
     feed(&p,"COMMIT\n",32);CHECK(strstr(response,"COMMIT_BLOCKED"));
     feed(&p,"BEGIN 00000000 00000000\n",0);CHECK(!p.active && strstr(response,"SIZE"));
     feed(&p,"BEGIN 00080001 00000000\n",0);CHECK(!p.active && strstr(response,"SIZE"));

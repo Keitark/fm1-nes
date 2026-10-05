@@ -9,4 +9,8 @@ void fm1_usb_audio_stop(void);
 void fm1_usb_audio_dac(int32_t *,unsigned);
 void fm1_usb_audio_status(char *,size_t);
 void fm1_usb_audio_transport_status(char *,size_t);
+void fm1_usb_audio_microphone(int on);
+void fm1_usb_audio_mic_status(char *,size_t);
+/* Single volatile read, no IRQ masking/spinlock in the emulated CPU. */
+unsigned fm1_usb_audio_mic_bits(void);
 #endif

@@ -85,6 +85,16 @@ static void fm1_usb_task(void *arg) {
 #endif
             }
             if(n)fm1_diag_feed(&protocol,rx,n,now,reply,NULL);
+#if defined(FM1_USB_AUDIO) && defined(FM1_NES_PLAYER)
+            if(protocol.mic_requested) {
+                unsigned request=protocol.mic_requested;char status[160];protocol.mic_requested=0;
+                if(fm1_usb_boot_pending())reply(NULL,"ERR MIC_UBOOT_PENDING\n");
+                else {
+                    if(request!=3)fm1_usb_audio_microphone(request==2);
+                    fm1_usb_audio_mic_status(status,sizeof(status));reply(NULL,status);
+                }
+            }
+#endif
             if(protocol.boot_requested) {
                 fm1_diag_reset(&protocol);
 #ifdef FM1_PERIPHERAL_TESTS
@@ -103,6 +113,7 @@ static void fm1_usb_task(void *arg) {
                     char status[224];
                     fm1_usb_audio_status(status,sizeof(status));reply(NULL,status);
                     fm1_usb_audio_transport_status(status,sizeof(status));reply(NULL,status);
+                    fm1_usb_audio_mic_status(status,sizeof(status));reply(NULL,status);
                 }
 #endif
                 if(fm1_usb_boot_pending() || fm1_peripheral_request(test,generation))reply(NULL,"ERR TEST_BUSY\n");

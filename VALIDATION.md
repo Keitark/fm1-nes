@@ -1,5 +1,30 @@
 # Source-release validation
 
+## USB playback to controller II mic switch — 2026-10-05
+
+- Added default-OFF CDC `MIC ON`, `MIC OFF`, `MIC STATUS`. Existing PC playback
+  remains audible and capture excludes PC return. Controller II mic is a bounded
+  activity approximation at `$4016` D2, not an analog/cycle-exact waveform model.
+- **51/51 source tests, 26/26 NES host tests, 37/37 USB host tests passed**.
+  Coverage includes the actual generated CPU reads, pad shift/strobe continuity,
+  threshold/hysteresis/exact hold, anti-phase/right-only PCM, starvation, stop,
+  disable/reset and sustained duplex capture isolation with mic enabled.
+- Composite original-diagnostic and private owner-cartridge builds passed static
+  closure; CDC-only original-diagnostic build also passed. Composite linked-image
+  corruption tests: **15/15 passed** for both builds, including getter and mic-bit
+  corruption rejection. No private cartridge bytes are included in Git.
+- Reviewed new trace/power merged-global operands against symbols/disassembly;
+  the full normalized SDK power initializer hash remains unchanged. The target
+  CPU getter is audited as one volatile load, without a spinlock/IRQ mask.
+- Original composite diagnostic app: **202416 bytes**, SHA-256
+  `770beb570e6967b7e69b8ad4b5bd34333b5a152c19749bd1159c1dd5a9970595`.
+  Source allowlist now contains **162 files**. Existing Python/compiler and pinned
+  dependencies were reused; no interpreter, environment or writer was installed.
+- **No device command, flash or reset performed.** The bench gate remains open:
+  after an authorized install, route PC audio to USB playback, check enabled/active
+  status for sound/silence/OFF/reset, then test a supported mic-aware cartridge.
+  A status bit alone does not establish game compatibility or audible acceptance.
+
 ## Optional original NROM game — 2026-10-03
 
 - Maintainer identified and authorized the Claude Code-assisted game's original

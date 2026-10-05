@@ -18,6 +18,22 @@ def modified_notice(text, origin):
             ' * Upstream license and copyright notices below remain applicable.\n'
             ' */\n' + text)
 
+def nes_microphone(text):
+    """Famicom controller II immediate mic bit; preserve all pad shifts."""
+    text=modified_notice(text,'PeakRacing NES (Apache-2.0)')
+    text=once(text,'#include "nes.h"', '''#include "nes.h"
+#ifdef FM1_USB_AUDIO
+extern unsigned fm1_usb_audio_mic_bits(void);
+#endif''')
+    anchor='    return state;\n}\n\nstatic inline void nes_write_joypad'
+    return once(text,anchor,'''#ifdef FM1_USB_AUDIO
+    if(address==0x4016)state|=(uint8_t)(fm1_usb_audio_mic_bits() & 4u);
+#endif
+    return state;
+}
+
+static inline void nes_write_joypad''')
+
 def nes_render_skip(text):
     """NROM/CNROM hidden-frame pixels only; retain all emulation side effects."""
     text=modified_notice(text,'PeakRacing NES (Apache-2.0)')
@@ -305,13 +321,13 @@ if __name__=='__main__':
     from pathlib import Path
     p=argparse.ArgumentParser(description='Generate a build-only APU overlay; no vendor edits')
     group=p.add_mutually_exclusive_group(required=True)
-    group.add_argument('--nes-apu',type=Path);group.add_argument('--nes-render',type=Path)
+    group.add_argument('--nes-apu',type=Path);group.add_argument('--nes-render',type=Path);group.add_argument('--nes-cpu',type=Path)
     p.add_argument('--out',type=Path,required=True)
     p.add_argument('--profile',action='store_true')
     p.add_argument('--tiles',action='store_true')
     a=p.parse_args();a.out.parent.mkdir(parents=True,exist_ok=True)
-    source=a.nes_apu or a.nes_render
-    result=(nes_apu if a.nes_apu else nes_render_skip)(source.read_text(encoding='utf-8'))
+    source=a.nes_apu or a.nes_render or a.nes_cpu
+    result=(nes_apu if a.nes_apu else nes_render_skip if a.nes_render else nes_microphone)(source.read_text(encoding='utf-8'))
     if a.tiles:
         if not a.nes_render:p.error('--tiles requires --nes-render')
         result=nes_tiles(result)

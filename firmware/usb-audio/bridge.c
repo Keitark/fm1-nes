@@ -7,6 +7,22 @@
 static unsigned fill(const fm1_uac_fifo *q){return q->wr-q->rd;}
 static void reset(fm1_uac_fifo *q){q->rd=q->wr=q->phase=q->primed=0;}
 #define RECOVERY_FRAMES 32u
+void fm1_uac_microphone(fm1_uac_bridge *b,int on) {
+    b->mic_enabled=!!on;b->mic_hold=b->mic_active=0;
+}
+/* Activity approximation of Famicom $4016 D2, not an analog ADC.
+   Inspect consumed PC PCM before playback fade/master gain. Missing samples
+   clear immediately: a fade or stale FIFO must not blow. */
+static void microphone(fm1_uac_bridge *b,const int16_t pc[2],int valid) {
+    unsigned magnitude,l,r;
+    if(!valid){b->mic_hold=b->mic_active=0;return;}
+    l=(unsigned)(pc[0]<0?-(int32_t)pc[0]:pc[0]);
+    r=(unsigned)(pc[1]<0?-(int32_t)pc[1]:pc[1]);
+    magnitude=l>r?l:r; /* No cancellation of opposite-phase stereo. */
+    if(magnitude>=(b->mic_active?FM1_MIC_RELEASE:FM1_MIC_ATTACK))b->mic_hold=FM1_MIC_HOLD;
+    else if(b->mic_hold)--b->mic_hold;
+    b->mic_active=!!b->mic_hold;
+}
 static void playback_release(fm1_uac_bridge *b) {
     unsigned ch;
     b->playback_ramp=0;b->playback_tail=RECOVERY_FRAMES;
@@ -14,7 +30,7 @@ static void playback_release(fm1_uac_bridge *b) {
 }
 void fm1_uac_stream(fm1_uac_bridge *b,unsigned direction,int on) {
     if(direction){b->in_active=!!on;reset(&b->capture);}
-    else {b->out_active=!!on;reset(&b->playback);playback_release(b);}
+    else {b->out_active=!!on;reset(&b->playback);playback_release(b);b->mic_hold=b->mic_active=0;}
 }
 static void push(fm1_uac_fifo *q,int16_t l,int16_t r) {
     if(fill(q)==FM1_UAC_FRAMES){q->rd++;q->overruns++;}
@@ -49,10 +65,13 @@ static int16_t clip(int32_t v){return (int16_t)(v>32767?32767:v< -32768?-32768:v
 void fm1_uac_dac(fm1_uac_bridge *b,int32_t *pcm,unsigned n) {
     unsigned i,ch;int16_t pc[2];
     for(i=0;i<n;i++) {
+        int valid;
         int16_t l=clip(pcm[2*i]/256),r=clip(pcm[2*i+1]/256);
         if(b->in_active)push(&b->capture,l,r);
         pc[0]=pc[1]=0;
-        if(b->out_active && sample(&b->playback,(48000u*65536u)/44100u,pc)) {
+        valid=b->out_active && sample(&b->playback,(48000u*65536u)/44100u,pc);
+        if(b->mic_enabled)microphone(b,pc,valid);
+        if(valid) {
             if(b->playback_ramp<RECOVERY_FRAMES)++b->playback_ramp;
             for(ch=0;ch<2;ch++)pc[ch]=(int16_t)((int32_t)pc[ch]*(int32_t)b->playback_ramp/(int32_t)RECOVERY_FRAMES);
             b->playback_tail=0;

@@ -32,6 +32,11 @@ The note names below refer to the **physical key positions from left to right**
 
 This is the mapping implemented by the current firmware example.
 
+The optional composite USB build also includes `MIC ON` / `MIC OFF` / `MIC STATUS`
+over USB serial to feed PC playback into the emulated controller II microphone
+(default OFF). See [USB_AUDIO.md](USB_AUDIO.md#controller-ii-microphone-switch)
+for host routing and the one-bit activity approximation; bench acceptance is pending.
+
 ## Application-only programming: tested on V14
 
 **Build the complete application; update only its changed flash sectors.**
