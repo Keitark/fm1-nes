@@ -1,7 +1,10 @@
 # Custom firmware development for the M-VAVE FM-1
 
+[![Source checks](https://github.com/Keitark/fm1-nes/actions/workflows/source-release.yml/badge.svg?branch=main&event=push)](https://github.com/Keitark/fm1-nes/actions/workflows/source-release.yml)
 [![Status: experimental](https://img.shields.io/badge/status-experimental-orange)](VALIDATION.md)
-[![Licenses: mixed](https://img.shields.io/badge/licenses-Apache--2.0%20%2B%20GPLv3-blue)](THIRD_PARTY.md)
+[![Licenses: Apache-2.0 + GPLv3 + MIT](https://img.shields.io/badge/licenses-Apache--2.0%20%2B%20GPLv3%20%2B%20MIT-blue)](THIRD_PARTY.md)
+[![Hardware: Jieli WL82](https://img.shields.io/badge/hardware-Jieli%20WL82-informational)](GETTING_STARTED.md)
+[![Updates: app-only](https://img.shields.io/badge/updates-app--only-blue)](APP_UPDATES.md)
 
 This repository shares resources, board-support code and a worked example of
 **how to develop custom firmware for the FM-1**, based on the Jieli WL82. The
