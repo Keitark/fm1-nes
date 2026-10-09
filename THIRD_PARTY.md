@@ -40,7 +40,7 @@ adaptations and patch context. Retain the external tool's original LICENSE too.
 
 `licenses/Apache-2.0.txt` contains the dependency license text. Build-time overlays
 in `firmware/usb-diag/vendor_overlay.py` adapt the pinned SDK USB implementation
-and NES rendering/APU implementation without modifying upstream checkouts.
+and NES rendering/APU/controller implementation without modifying upstream checkouts.
 Generated copies retain upstream headers and carry a prominent FM-1 project
 modification notice. The overlay script itself contains upstream match fragments
 under their applicable terms. Overlay substitutions are local modifications,

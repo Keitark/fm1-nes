@@ -7,7 +7,7 @@
 typedef struct {
     uint32_t length, expected_crc, received, crc, last_ms;
     unsigned used;
-    unsigned active, verified, dropping, boot_requested, test_requested;
+    unsigned active, verified, dropping, boot_requested, test_requested, mic_requested;
     char line[FM1_DIAG_LINE];
 } fm1_diag_protocol;
 typedef void (*fm1_diag_reply)(void *, const char *);

@@ -87,6 +87,7 @@
 !/firmware/nes/tests/keyscan_irq_tests.c
 !/firmware/nes/tests/keyscan_tests.c
 !/firmware/nes/tests/make_diagnostic_rom.py
+!/firmware/nes/tests/microphone_tests.c
 !/firmware/nes/tests/nes_fx_tests.c
 !/firmware/nes/tests/power_sdk/generic/typedef.h
 !/firmware/nes/tests/power_sdk/typedef.h

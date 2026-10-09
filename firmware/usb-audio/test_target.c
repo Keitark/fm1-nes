@@ -41,6 +41,7 @@ static void set(unsigned itf,unsigned alt){struct usb_ctrlrequest r={1,11,alt,it
 int main(void) {
     u8 desc[173];u32 itf=2;unsigned i;int32_t pcm[128]={0};
     fm1_usb_audio_init();CHECK(fm1_uac_desc_config(0,desc,&itf)==173 && itf==5 && !memcmp(desc,fm1_uac_descriptor,173));
+    CHECK(!fm1_usb_audio_mic_bits() && !bridge.mic_enabled);
     set(3,1);set(4,1);CHECK(bridge.out_active && bridge.in_active && interrupts[0] && interrupts[1] && enabled);
     memset(dma[0],0,192);rx_length=192;interrupts[0](&device,1);CHECK(bridge.rx_packets==1 && bridge.playback.wr==48);
     rx_length=193;interrupts[0](&device,1);CHECK(bridge.bad_packets==1);
@@ -67,7 +68,15 @@ int main(void) {
      tx_result=192;interrupts[1](&device,1);CHECK(!capture_pending && !memcmp(staged,dma[1],192));}
     {struct usb_ctrlrequest r={0x81,10,0,4,1};handlers[4](&device,&r);CHECK(device.setup[0]==1);}
     for(i=0;i<200;i++){struct usb_ctrlrequest r={0x21,1,0,3,(uint16_t)i};phase=99;handlers[3](&device,&r);CHECK(phase==7);}
-    resets[2](&device,2);CHECK(!bridge.out_active && !bridge.in_active && !interrupts[0] && !interrupts[1]);
+    fm1_usb_audio_microphone(1);
+    for(i=0;i<48;i++){dma[0][4*i]=0;dma[0][4*i+1]=8;dma[0][4*i+2]=0;dma[0][4*i+3]=0xf8;}
+    rx_length=192;for(i=0;i<12;i++)interrupts[0](&device,1);
+    memset(pcm,0,sizeof(pcm));fm1_usb_audio_dac(pcm,64);CHECK(fm1_usb_audio_mic_bits()==4);
+    {char s[160];fm1_usb_audio_mic_status(s,sizeof(s));CHECK(strstr(s,"enabled=1 active=1"));}
+    fm1_usb_audio_microphone(0);CHECK(!fm1_usb_audio_mic_bits());
+    fm1_usb_audio_microphone(1);memset(pcm,0,sizeof(pcm));fm1_usb_audio_dac(pcm,64);CHECK(fm1_usb_audio_mic_bits()==4);
+    set(3,0);CHECK(!fm1_usb_audio_mic_bits());set(3,1);CHECK(!fm1_usb_audio_mic_bits());
+    resets[2](&device,2);CHECK(!bridge.mic_enabled && !fm1_usb_audio_mic_bits() && !bridge.out_active && !bridge.in_active && !interrupts[0] && !interrupts[1]);
     set(3,1);set(4,1);fm1_usb_audio_stop();CHECK(!armed && !bridge.out_active && !bridge.in_active);
     set(3,1);CHECK(!bridge.out_active && !interrupts[0]);
     puts("PASS UAC target descriptor registration, alt settings, bounded DMA, EP0 lifetime, reset and UBOOT closure");return 0;

@@ -16,6 +16,7 @@
 static fm1_uac_bridge bridge;
 static spinlock_t lock;
 static unsigned armed;
+static volatile unsigned mic_bits;
 static volatile unsigned capture_epoch;
 static unsigned capture_pending;
 static u8 capture_packet[192]; /* CPU staging; controller never owns this. */
@@ -60,7 +61,7 @@ static void stream(struct usb_device_t *d,unsigned direction,int on) {
     if(direction){++capture_epoch;capture_pending=0;}
     if(!armed)on=0;
     if(direction){if(on)transport.starts++;else transport.stops++;}
-    fm1_uac_stream(&bridge,direction,on);release(f);
+    fm1_uac_stream(&bridge,direction,on);mic_bits=bridge.mic_active?4u:0u;release(f);
     if(on) {
         if(direction)usb_enable_ep(id,1);
         usb_g_set_intr_hander(id,direction?0x81:1,direction?tx:rx);
@@ -69,7 +70,7 @@ static void stream(struct usb_device_t *d,unsigned direction,int on) {
         if(direction)usb_set_intr_txe(id,1);else usb_set_intr_rxe(id,1);
     }
 }
-static void reset(struct usb_device_t *d,u32 itf){(void)itf;stream(d,0,0);stream(d,1,0);}
+static void reset(struct usb_device_t *d,u32 itf){(void)itf;fm1_usb_audio_microphone(0);stream(d,0,0);stream(d,1,0);}
 static u32 setup(struct usb_device_t *d,struct usb_ctrlrequest *r) {
     unsigned f;u8 *reply=usb_get_setup_buffer(d);reply[0]=reply[1]=0;
     if(d->bDeviceStates!=USB_CONFIGURED || !fm1_uac_interface_request(r->bRequestType,r->bRequest,r->wValue,r->wIndex,r->wLength)) {
@@ -91,11 +92,21 @@ u32 fm1_uac_desc_config(usb_dev id,u8 *out,u32 *itf) {
     }
     memcpy(out,fm1_uac_descriptor,sizeof(fm1_uac_descriptor));*itf=5;return sizeof(fm1_uac_descriptor);
 }
-void fm1_usb_audio_init(void){unsigned f=take();armed=1;release(f);}
+void fm1_usb_audio_init(void){unsigned f=take();fm1_uac_microphone(&bridge,0);mic_bits=0;armed=1;release(f);}
 void fm1_usb_audio_stop(void) {
     unsigned f=take();armed=0;release(f);reset(usb_id2device(FM1_USB_CONTROLLER),2);
 }
-void fm1_usb_audio_dac(int32_t *p,unsigned n){unsigned f=take();if(armed)fm1_uac_dac(&bridge,p,n);release(f);}
+void fm1_usb_audio_dac(int32_t *p,unsigned n){unsigned f=take();if(armed)fm1_uac_dac(&bridge,p,n);mic_bits=bridge.mic_active?4u:0u;release(f);}
+void fm1_usb_audio_microphone(int on){unsigned f=take();fm1_uac_microphone(&bridge,armed && on);mic_bits=0;release(f);}
+#ifndef _MSC_VER
+__attribute__((noinline))
+#endif
+unsigned fm1_usb_audio_mic_bits(void){return mic_bits;}
+void fm1_usb_audio_mic_status(char *out,size_t n) {
+    unsigned enabled,active,f=take();enabled=bridge.mic_enabled;active=bridge.mic_active;release(f);
+    snprintf(out,n,"MIC source=usb-playback enabled=%u active=%u threshold=%u release=%u hold_ms=10\n",
+             enabled,active,FM1_MIC_ATTACK,FM1_MIC_RELEASE);
+}
 void fm1_usb_audio_status(char *out,size_t n) {
     unsigned values[11],f=take();
     values[0]=bridge.out_active;values[1]=bridge.in_active;values[2]=bridge.rx_packets;values[3]=bridge.tx_packets;

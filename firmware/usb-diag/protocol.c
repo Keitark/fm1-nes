@@ -52,6 +52,9 @@ static void command(fm1_diag_protocol *p, uint32_t now, fm1_diag_reply reply, vo
     }
 #ifdef FM1_PERIPHERAL_TESTS
     if(!strcmp(p->line,"HELP")) {
+#if defined(FM1_USB_AUDIO) && defined(FM1_NES_PLAYER)
+        reply(ctx,"MIC ON | MIC OFF | MIC STATUS; USB playback to controller II $4016 bit 2, default OFF\n");
+#endif
 #ifdef FM1_NES_PLAYER
         reply(ctx,"TEST NES | TEST STOP | TEST STATUS; stop NES before other peripheral tests; UBOOT then UBOOT CONFIRM; LF-only\n");return;
 #else
@@ -71,6 +74,15 @@ static void command(fm1_diag_protocol *p, uint32_t now, fm1_diag_reply reply, vo
         }
     }
 #endif
+    if(!strncmp(p->line,"MIC ",4)) {
+#if defined(FM1_USB_AUDIO) && defined(FM1_NES_PLAYER)
+        unsigned request= !strcmp(p->line,"MIC OFF")?1u:!strcmp(p->line,"MIC ON")?2u:!strcmp(p->line,"MIC STATUS")?3u:0u;
+        if(request && !p->active && final){fm1_diag_reset(p);p->mic_requested=request;return;}
+        fm1_diag_reset(p);reply(ctx,"ERR MIC_BUSY_TRAILING_OR_COMMAND\n");return;
+#else
+        fm1_diag_reset(p);reply(ctx,"ERR MIC_REQUIRES_NES_USB_AUDIO\n");return;
+#endif
+    }
     if(!strcmp(p->line,"ABORT")) { fm1_diag_reset(p); reply(ctx,"OK ABORT\n"); return; }
     if(!strcmp(p->line,"COMMIT")) {
         fm1_diag_reset(p); reply(ctx,"ERR COMMIT_BLOCKED STOCK_LAYOUT_UNQUALIFIED\n"); return;

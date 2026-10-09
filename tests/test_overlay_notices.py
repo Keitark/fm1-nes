@@ -20,7 +20,7 @@ class NoticeTests(unittest.TestCase):
         self.assertEqual(result, overlay.modified_notice(result, 'Example upstream'))
 
     def test_every_public_transform_marks_its_source(self):
-        transforms = {'nes_render_skip', 'nes_tiles', 'nes_apu', 'nes_profile',
+        transforms = {'nes_render_skip', 'nes_tiles', 'nes_apu', 'nes_profile', 'nes_microphone',
                       'boot_entry', 'cdc', 'device'}
         functions = {n.name: n for n in ast.parse(SOURCE.read_text()).body
                      if isinstance(n, ast.FunctionDef)}
@@ -37,6 +37,15 @@ class NoticeTests(unittest.TestCase):
         self.assertIn('Modified by the FM-1', result)
         self.assertIn('Jieli-Tech AC79 SDK', result)
         self.assertIn('extern void nvram_set_boot_state(u32 state);', result)
+
+    def test_microphone_overlay_fails_closed_on_missing_or_duplicate_anchor(self):
+        upstream = '#include "nes.h"\n    return state;\n}\n\nstatic inline void nes_write_joypad'
+        result = overlay.nes_microphone(upstream)
+        self.assertIn('if(address==0x4016)', result)
+        self.assertIn('fm1_usb_audio_mic_bits() & 4u', result)
+        for invalid in (upstream.replace('return state;', 'return other;'), upstream+upstream):
+            with self.assertRaises(ValueError):
+                overlay.nes_microphone(invalid)
 
 
 if __name__ == '__main__':

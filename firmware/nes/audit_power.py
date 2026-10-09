@@ -146,7 +146,10 @@ def audit_power(symbols, sections, code_at, required=False, usb_only=False,usb_a
     if usb_audio:
         # NES composite disassembly: LRC224/236, sys_low_power260.
         # Same SDK initializer; only the ninth store-offset bit changes.
-        require(layout in ((224,236,260),(228,240,264)),'Composite audio power merged-global layout changed')
+        # Mic snapshot link: base0x1c46db0, LRC232/244, power268.
+        # Reviewed0x20012d4 store5aee180e and0x2001302 d0ec850f;
+        # the full normalized SDK initializer hash below remains mandatory.
+        require(layout in ((224,236,260),(228,240,264),(232,244,268)),'Composite audio power merged-global layout changed')
     for off,target,prefix,regbits,historical in (
         (0x0d6,'lrc.0',b'\x5a\xee',0x10,bytes.fromhex('5a ee 14 04')),
         (0x104,'lrc.6',b'\xd0\xec',0x80,bytes.fromhex('d0 ec 81 05')),

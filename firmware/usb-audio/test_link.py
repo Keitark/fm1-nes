@@ -69,6 +69,21 @@ class LinkTests(unittest.TestCase):
     def test_descriptor_corruption_is_rejected(self):
         with self.assertRaisesRegex(ValueError, 'UAC1 interface/terminal'):
             self.check_elf(self.corrupt('fm1_uac_descriptor', 90))
+    def test_microphone_getter_corruption_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, 'Microphone getter'):
+            self.check_elf(self.corrupt('fm1_usb_audio_mic_bits', 6))
+    def test_microphone_cpu_bit_corruption_is_rejected(self):
+        from audit_power import call_target
+        start=self.symbols['nes_read_cpu']
+        section=next(s for s in self.sections.values() if s[1]!=8 and s[3]<=start<s[3]+s[5])
+        raw=self.elf[section[4]+start-section[3]:section[4]+start-section[3]+0x150]
+        for off in range(0,len(raw)-3,2):
+            ins=raw[off:off+4]
+            if ins[0]&0xc0==0x80 and ins[1]==0xea and call_target(ins,start+off)==self.symbols['fm1_usb_audio_mic_bits']:
+                with self.assertRaisesRegex(ValueError,'NES microphone controller bit path'):
+                    self.check_elf(self.corrupt('nes_read_cpu',off+6))
+                return
+        self.fail('microphone read call not found')
     def test_composite_setup_policy_corruption_is_rejected(self):
         # Corrupt the interface upper-bound immediate in the actual EP0 hook.
         with self.assertRaisesRegex(ValueError, 'Composite USB setup policy'):
