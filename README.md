@@ -357,3 +357,5 @@ firmware, game ROMs or third-party tools. A different license for project-owned
 contributions would not remove those obligations or resolve the provenance of
 stock-derived material. See [THIRD_PARTY.md](THIRD_PARTY.md) and the retained
 [Apache-2.0 dependency license](licenses/Apache-2.0.txt).
+
+You can also try FM-1 NES in the browser, no flashing needed, in the free community [FM-1 Emulator](https://fm1-emulator.atst.tools/).
